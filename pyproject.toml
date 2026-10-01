@@ -1,0 +1,33 @@
+[project]
+name = "nexus-benchmarking"
+version = "0.1.0"
+description = "Hardware-aware benchmarking utility for the NEXUS autonomous air-ground robotic system"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "psutil>=5.9",
+    "opencv-python>=4.8",
+    "torch>=2.0",
+    "ultralytics>=8.0",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+nexus-bench = "nexus_bench.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nexus_bench*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

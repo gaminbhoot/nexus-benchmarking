@@ -1,0 +1,12 @@
+# Full NEXUS stack — concurrent UAV+rover + tracking + fusion, sustained.
+profile_base: full
+modules: [all]
+imgsz: 640
+batch: 1
+precision: fp32
+device: auto
+repeats: 50
+warmup: 5
+duration_s: 60
+req_fps: 15
+seed: 0
