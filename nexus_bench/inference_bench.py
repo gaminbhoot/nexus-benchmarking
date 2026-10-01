@@ -1,4 +1,8 @@
-"""AI inference: YOLO (Ultralytics) at imgsz/batch/precision grid. Synthetic fallback if no weights."""
+"""AI inference: real YOLO (Ultralytics) over an imgsz x batch x precision grid.
+
+Honesty rule: if no valid weights are found, this module reports UNSUPPORTED and
+produces no latency numbers. It never substitutes a conv proxy for YOLO results.
+"""
 import os
 import time
 import numpy as np
@@ -6,78 +10,98 @@ import numpy as np
 from nexus_bench.monitor import Monitor
 from nexus_bench.profiles import resolve_device
 from nexus_bench.stats import summarize
+from nexus_bench.yolo_util import load_weights, precision_kwargs
 
-def _synthetic_input(h, w, batch=1):
-    rng = np.random.default_rng(0)
-    return [(rng.integers(0, 255, (h, w, 3), dtype=np.uint8)) for _ in range(batch)]
+STATUS_REAL = "measured_yolo"
+STATUS_UNSUPPORTED = "unsupported_no_weights"
+
+def _synthetic_batch(h, w, batch, seed=0):
+    rng = np.random.default_rng(seed)
+    return [rng.integers(0, 255, (h, w, 3), dtype=np.uint8) for _ in range(batch)]
+
+def _grid(cfg):
+    imgszs = cfg.get("imgsz_list") or [cfg.get("imgsz", 640)]
+    batches = cfg.get("batch_list") or [cfg.get("batch", 1)]
+    return imgszs, batches
 
 def run(cfg):
     dev = resolve_device(cfg.get("device", "auto"))
-    model_path = cfg.get("model") or ""
-    imgszs = [cfg.get("imgsz", 640)] if cfg.get("imgsz") else [320, 640]
-    batches = [cfg.get("batch", 1)]
+    model_path = (cfg.get("model") or "").strip()
     prec = cfg.get("precision", "fp32")
-    out = {"module": "inference", "config": {**cfg, "resolved_device": dev},
-           "tests": {}, "errors": []}
+    imgszs, batches = _grid(cfg)
+    out = {"module": "inference",
+           "config": {**cfg, "resolved_device": dev, "imgsz_list": imgszs,
+                      "batch_list": batches},
+           "tests": {}, "errors": [], "status": STATUS_REAL}
+    if not model_path or not os.path.exists(model_path):
+        out["status"] = STATUS_UNSUPPORTED
+        out["errors"].append(
+            "no YOLO weights found (pass --model path/to/weights.pt); "
+            "no inference numbers reported. Synthetic proxies are not a "
+            "substitute for YOLO — see README methodology.")
+        with Monitor() as mon:
+            out["telemetry"] = mon.summary()
+        return out
     with Monitor() as mon:
-        if model_path and os.path.exists(model_path):
-            try:
-                from ultralytics import YOLO
-                model = YOLO(model_path)
-                for imgsz in imgszs:
-                    for bs in batches:
-                        frames = _synthetic_input(imgsz, imgsz, bs)
-                        for _ in range(cfg.get("warmup", 3)):
-                            model.predict(frames, imgsz=imgsz, device=dev, verbose=False)
-                        pre, infer, post = [], [], []
-                        for f in frames * max(1, cfg.get("repeats", 20) // max(1, bs)):
-                            t0 = time.perf_counter()
-                            r = model.predict(f, imgsz=imgsz, device=dev, verbose=False)
-                            infer.append((time.perf_counter() - t0) * 1000)
-                            try:
-                                s = r[0].speed
-                                pre.append(s.get("preprocess", 0)); post.append(s.get("postprocess", 0))
-                            except Exception:
-                                pass
-                        key = f"yolo_imgsz{imgsz}_b{bs}_{prec}"
-                        d = summarize(infer)
-                        if pre:
-                            d["preprocess_mean_ms"] = round(sum(pre) / len(pre), 2)
-                            d["postprocess_mean_ms"] = round(sum(post) / len(post), 2)
-                        out["tests"][key] = d
-            except RuntimeError as e:
-                if "out of memory" in str(e).lower():
-                    out["errors"].append(f"OOM at {model_path} (recovered, try smaller imgsz/batch): {e}")
-                    try:
-                        import torch
-                        if dev == "cuda":
-                            torch.cuda.empty_cache()
-                    except Exception:
-                        pass
-                else:
-                    out["errors"].append(str(e))
-            except Exception as e:
-                out["errors"].append(f"yolo failed, synthetic fallback: {e}")
-        if not out["tests"]:
-            try:  # torch conv proxy so the grid still yields numbers without weights
-                import torch
-                import torch.nn as nn
-                c = nn.Conv2d(3, 16, 3, padding=1).to(dev).eval()
-                for imgsz in imgszs:
-                    x = torch.randn(1, 3, imgsz // 4, imgsz // 4, device=dev)
-                    for _ in range(cfg.get("warmup", 3)):
-                        c(x)
-                    ts = []
-                    for _ in range(cfg.get("repeats", 20)):
+        model, tag = load_weights(model_path, want_fp16=(prec == "fp16"))
+        if model is None:
+            out["status"] = STATUS_UNSUPPORTED
+            out["errors"].append(f"{tag}; no inference numbers reported. "
+                                 "Synthetic proxies are not a substitute for YOLO.")
+            out["telemetry"] = mon.summary()
+            return out
+        pk = precision_kwargs(model, prec == "fp16")
+        out["config"]["effective_precision"] = tag
+        w, r = cfg.get("warmup", 3), cfg.get("repeats", 20)
+        for imgsz in imgszs:
+            for bs in batches:
+                key = f"yolo_imgsz{imgsz}_b{bs}_{prec}"
+                try:
+                    frames = _synthetic_batch(imgsz, imgsz, bs)
+                    for _ in range(w):  # warmup with the SAME batched call shape
+                        model.predict(frames, imgsz=imgsz, device=dev,
+                                      verbose=False, **pk)
+                    lat, pre, post, ndet = [], [], [], []
+                    iters = max(1, r // max(1, bs))
+                    for i in range(iters):
                         t0 = time.perf_counter()
-                        with torch.no_grad():
-                            c(x)
-                        if dev == "cuda":
-                            torch.cuda.synchronize()
-                        ts.append((time.perf_counter() - t0) * 1000)
-                    out["tests"][f"synthetic_conv_proxy_imgsz{imgsz}"] = summarize(ts)
-                out["errors"].append("no model weights provided/found; synthetic proxy used")
-            except Exception as e:
-                out["errors"].append(f"synthetic fallback failed: {e}")
+                        # ONE call with a list of bs images = a true batch of bs.
+                        res = model.predict(frames, imgsz=imgsz, device=dev,
+                                            verbose=False, **pk)
+                        dt = (time.perf_counter() - t0) * 1000
+                        lat.append(dt)
+                        ndet.append(sum(len(x.boxes) if x.boxes is not None else 0
+                                        for x in res))
+                        try:
+                            s = res[0].speed
+                            pre.append(s.get("preprocess", 0))
+                            post.append(s.get("postprocess", 0))
+                        except Exception:
+                            pass
+                    d = summarize(lat)
+                    # Per-image cost AND batch throughput: both are meaningful.
+                    d["batch_size"] = bs
+                    d["per_image_ms"] = round(d["mean_ms"] / bs, 3) if d["mean_ms"] else None
+                    d["batch_ips"] = round(1000.0 / d["mean_ms"] * bs, 1) if d["mean_ms"] else None
+                    if pre:
+                        d["preprocess_mean_ms"] = round(sum(pre) / len(pre), 2)
+                        d["postprocess_mean_ms"] = round(sum(post) / len(post), 2)
+                    d["mean_detections_per_batch"] = round(sum(ndet) / len(ndet), 1)
+                    out["tests"][key] = d
+                except RuntimeError as e:
+                    if "out of memory" in str(e).lower():
+                        out["errors"].append(
+                            f"OOM at {key} (recovered; smaller imgsz/batch fits — "
+                            f"this IS the VRAM boundary signal): {str(e)[:200]}")
+                        try:
+                            import torch
+                            if dev == "cuda":
+                                torch.cuda.empty_cache()
+                        except Exception:
+                            pass
+                    else:
+                        out["errors"].append(f"{key}: {e}")
+                except Exception as e:
+                    out["errors"].append(f"{key}: {e}")
         out["telemetry"] = mon.summary()
     return out

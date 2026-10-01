@@ -1,6 +1,6 @@
 # RTX 3050 4GB Laptop — UAV perception gate. Tune model/imgsz/batch to fit VRAM.
 profile_base: uav
-modules: [system, inference, vision, memory, thermal]
+modules: [system, inference, tracking, reid, pipeline, memory, thermal]
 model: ""
 imgsz: 640
 batch: 1

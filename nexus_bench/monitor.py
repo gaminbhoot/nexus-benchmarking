@@ -32,14 +32,42 @@ class Monitor:
         except Exception:
             pass
         try:
-            out = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu,temperature.gpu,power.draw,memory.used,memory.total",
+            out = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu,temperature.gpu,power.draw,power.limit,clocks.gr,clocks.mem,memory.used,memory.total,clocks_throttle_reasons.active",
                                   "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=5)
             if out.returncode == 0 and out.stdout.strip():
-                u, temp, pwr, mu, mt = [x.strip() for x in out.stdout.strip().splitlines()[0].split(",")]
-                s["gpu_util_pct"] = float(u)
-                s["gpu_temp_c"] = float(temp)
-                s["gpu_power_w"] = float(pwr)
-                s["vram_pct"] = round(100 * float(mu) / float(mt), 1)
+                parts = [x.strip() for x in out.stdout.strip().splitlines()[0].split(",")]
+                if len(parts) >= 8:
+                    (u, temp, pwr, plim, clk, memclk, mu, mt) = parts[:8]
+                    s["gpu_util_pct"] = float(u)
+                    s["gpu_temp_c"] = float(temp)
+                    s["gpu_power_w"] = float(pwr)
+                    s["gpu_power_limit_w"] = float(plim)
+                    s["gpu_clock_mhz"] = float(clk)
+                    s["gpu_mem_clock_mhz"] = float(memclk)
+                    s["vram_pct"] = round(100 * float(mu) / float(mt), 1)
+                    if len(parts) > 8 and parts[8] not in ("[N/A]", "N/A", ""):
+                        s["throttle_flags"] = parts[8]
+        except Exception:
+            pass
+        try:
+            import psutil
+            f = psutil.cpu_freq()
+            if f and f.current:
+                s["cpu_mhz"] = round(f.current, 1)
+            try:
+                temps = psutil.sensors_temperatures() or {}
+                for name in ("coretemp", "cpu_thermal", "k10temp", "acpitz"):
+                    if name in temps and temps[name]:
+                        s["cpu_temp_c"] = round(max(t.current for t in temps[name] if t.current), 1)
+                        break
+            except Exception:
+                pass
+            try:
+                b = psutil.sensors_battery()
+                if b is not None:
+                    s["ac_power"] = bool(b.power_plugged)
+            except Exception:
+                pass
         except Exception:
             pass
         return s
@@ -67,7 +95,9 @@ class Monitor:
     def summary(self):
         out = {"n": len(self.samples)}
         for k in ("cpu_pct", "ram_pct", "proc_rss_mb", "gpu_util_pct",
-                  "gpu_temp_c", "gpu_power_w", "vram_pct"):
+                  "gpu_temp_c", "gpu_power_w", "gpu_power_limit_w",
+                  "gpu_clock_mhz", "gpu_mem_clock_mhz", "vram_pct",
+                  "cpu_mhz", "cpu_temp_c"):
             vals = [s[k] for s in self.samples if k in s]
             if vals:
                 out[k] = {"mean": round(sum(vals) / len(vals), 2), "max": round(max(vals), 2)}

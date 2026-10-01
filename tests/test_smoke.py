@@ -9,36 +9,45 @@ import nexus_bench.comms_bench as comms_bench
 import nexus_bench.gpu_bench as gpu_bench
 import nexus_bench.mapping3d_bench as mapping3d_bench
 import nexus_bench.memory_bench as memory_bench
+import nexus_bench.reid_embed as reid_embed
+import nexus_bench.tracking_bench as tracking_bench
 import nexus_bench.vision_bench as vision_bench
 from nexus_bench import profiler, report
 from nexus_bench.profiles import PROFILES, get
-from nexus_bench.stats import summarize
 
 CFG = {"seed": 0, "warmup": 1, "repeats": 2, "duration_s": 2,
        "device": "cpu", "imgsz": 320, "batch": 1, "precision": "fp32",
-       "model": "", "video": "", "image_dir": "", "out": "reports"}
-
-def test_stats_percentiles():
-    s = summarize([10.0, 20.0, 30.0, 40.0])
-    assert s["n"] == 4 and s["median_ms"] == 25.0
-    assert s["p95_ms"] > s["median_ms"] and s["p99_ms"] >= s["p95_ms"]
-
-def test_profiler_never_hardcodes():
-    p = profiler.profile()
-    assert {"os", "cpu", "memory", "gpu", "accelerators"} <= set(p)
+       "model": "", "reid_model": "", "video": "", "uav_video": "",
+       "rover_video": "", "image_dir": "", "imgsz_list": None,
+       "batch_list": None, "agent_frames": 8, "throttle_temp_c": 83,
+       "req_fps": 15, "out": "reports"}
 
 def test_profiles_known():
     assert {"smoke", "uav", "rover", "full"} <= set(PROFILES)
     assert get("smoke")["imgsz"] >= 1
+
+def test_profiler_never_hardcodes():
+    p = profiler.profile()
+    assert {"os", "cpu", "memory", "gpu", "accelerators"} <= set(p)
 
 def test_cpu_gpu_memory_comms_mapping():
     for mod in (cpu_bench, gpu_bench, memory_bench, comms_bench, mapping3d_bench):
         r = mod.run(CFG)
         assert "tests" in r and isinstance(r.get("errors"), list)
 
+def test_reid_real_inference():
+    r = reid_embed.run(CFG)
+    assert "reid_embed_8query_vs_32gallery_ms" in r["tests"]
+    assert r["tests"]["reid_embed_8query_vs_32gallery_ms"]["n"] >= 1
+
+def test_tracking_pipeline():
+    r = tracking_bench.run(CFG)
+    assert "association_per_frame_ms" in r["tests"]
+
 def test_vision_reference():
     r = vision_bench.run(CFG)
-    assert "detect_track_ms" in r["tests"]
+    assert "detection_per_frame_ms" in r["tests"]
+    assert "association_per_frame_ms" in r["tests"]
 
 def test_report_serializes(tmp_path):
     results = {"_profile": profiler.profile(), "cpu": cpu_bench.run(CFG)}

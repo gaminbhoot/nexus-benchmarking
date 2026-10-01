@@ -10,9 +10,17 @@ BASE = {
     "imgsz": 640,
     "batch": 1,
     "precision": "fp32",    # fp32 | fp16
-    "model": "",            # path to YOLO weights; empty = synthetic/torch fallback
+    "model": "",            # path to YOLO weights; empty = module reports unsupported
+    "reid_model": "",        # optional embedding state_dict for the reid module
     "video": "",
+    "uav_video": "",         # falls back to video
+    "rover_video": "",       # falls back to video
     "image_dir": "",
+    "imgsz_list": None,      # optional sweep, e.g. [320, 480, 640]
+    "batch_list": None,      # optional sweep, e.g. [1, 2, 4]
+    "agent_frames": 60,      # frames per agent in integrated runs
+    "throttle_temp_c": 83,   # evidence threshold for the thermal verdict
+    "req_fps": 15,
     "out": "reports",
 }
 
