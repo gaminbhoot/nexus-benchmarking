@@ -19,16 +19,30 @@ def _full_memory(occ_pct=70.0):
             "errors": []}
 
 def _thermal_ok():
-    return {"module": "thermal", "status": S.FULL, "tests": {"throttling": "none detected"},
+    return {"module": "thermal", "status": S.FULL, "tests": {"throttling": "none_detected"},
             "errors": []}
 
 def _acc_ok():
     return {"module": "accuracy", "status": S.FULL,
-            "tests": {"agreement": {"map50_drop_vs_fp32": 0.01}}, "errors": []}
+            "tests": {"map_comparison": {"candidate": "fp16", "map50_drop_abs": 0.01,
+                                         "map50_drop_rel": 0.02}}, "errors": []}
+
+def _sustained_ok(fps=12.0):
+    return {"module": "sustained", "status": S.FULL,
+            "config": {"duration_s": 600},
+            "tests": {
+                "per_agent": {
+                    "uav": {"steady_fps": fps, "final_fps": fps, "drop_pct": 1.0,
+                            "degradation_pct": 5.0, "oom_events": 0},
+                    "rover": {"steady_fps": fps, "final_fps": fps, "drop_pct": 1.0,
+                              "degradation_pct": 5.0, "oom_events": 0}},
+                "memory_growth": {"growth": 10.0, "leak_suspected": False}},
+            "errors": []}
 
 def _base():
     return {"pipeline": _full_pipeline(), "integrated": _full_integrated(),
-            "memory": _full_memory(), "thermal": _thermal_ok(), "accuracy": _acc_ok()}
+            "memory": _full_memory(), "thermal": _thermal_ok(), "accuracy": _acc_ok(),
+            "sustained": _sustained_ok()}
 
 def test_gate_pass_with_headroom():
     g = G.evaluate(_base())

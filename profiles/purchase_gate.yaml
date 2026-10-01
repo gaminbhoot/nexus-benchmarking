@@ -1,9 +1,12 @@
 # NEXUS purchase gate: the exact acceptance question, not a vibe check.
 # Only FULL-status evidence counts. Missing evidence -> INCONCLUSIVE (never PASS).
-# Run: nexus-bench --profile profiles/purchase_gate.yaml --model <w.pt> --video <feed.mp4> --gate-strict
+# Run: nexus-bench wizard   (or: nexus-bench --profile profiles/purchase_gate.yaml
+#        --model <w.pt> --uav-video <u.mp4> --rover-video <r.mp4> --gate-strict)
 profile_base: full
-modules: [system, coldstart, inference, backends, accuracy, pipeline, tracking, reid, decode, memory, integrated, thermal, comms]
+modules: [system, coldstart, inference, backends, accuracy, pipeline, tracking, reid, decode, memory, integrated, thermal, comms, sustained]
 model: ""
+uav_video: ""
+rover_video: ""
 video: ""
 precision: fp16
 device: auto
@@ -12,6 +15,9 @@ batch: 1
 target_fps: 15.0
 integrated_mode: realtime
 duration_s: 60
+sustained_duration_s: 600
+sustained_window_s: 60
+concurrency: separate-contexts
 agent_frames: 60
 repeats: 30
 warmup: 5
@@ -24,6 +30,10 @@ gate:
     uav: {module: pipeline, min_fps: 15, max_p95_ms: 66.7, max_p99_ms: 120.0, max_miss_pct: 5.0, max_drop_pct: 5.0}
     rover: {module: pipeline, min_fps: 15, max_p95_ms: 66.7, max_p99_ms: 120.0, max_miss_pct: 5.0, max_drop_pct: 5.0}
     dual: {module: integrated, min_fps_each: 10.0, max_drop: 0, min_ticks: 10}
+  sustained: {min_fps_each: 10.0, max_drop_pct: 5.0, max_degradation_pct: 15.0, min_duration_s: 600}
   headroom: {min_fps_margin: 1.2, max_vram_occupied_pct: 85.0, max_miss_pct: 2.0}
   resources: {forbid_throttle_likely: true, forbid_oom: true}
   accuracy: {max_map_drop: 0.05}
+  expected_hardware: {gpu_contains: "RTX 3050", min_vram_gb: 4}
+  provenance: {forbid_dirty: true}
+  require_modules: [sustained]

@@ -1,5 +1,6 @@
 """CLI: supervising controller. Each module runs in a fresh worker process."""
 import argparse
+import hashlib
 import json
 import os
 import random
@@ -10,6 +11,7 @@ import tempfile
 import numpy as np
 
 from nexus_bench import gate as gate_mod
+from nexus_bench import power as power_mod
 from nexus_bench import profiler, provenance, report
 from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
@@ -23,7 +25,7 @@ MODULES = {"cpu": "nexus_bench.cpu_bench", "gpu": "nexus_bench.gpu_bench",
            "integrated": "nexus_bench.integrated_bench", "thermal": "nexus_bench.thermal_bench",
            "backends": "nexus_bench.backends_bench", "accuracy": "nexus_bench.accuracy_bench",
            "coldstart": "nexus_bench.coldstart_bench", "decode": "nexus_bench.decode_bench",
-           "matrix": "nexus_bench.matrix_bench",
+           "matrix": "nexus_bench.matrix_bench", "sustained": "nexus_bench.sustained_bench",
            "system": None}
 
 def _load_profile(name_or_path, overrides):
@@ -36,6 +38,8 @@ def _load_profile(name_or_path, overrides):
             raise KeyError(f"profile_base {base!r} unknown; choose from {sorted(PROFILES)}")
         cfg = get(base)
         mods = doc.pop("modules", None)
+        if mods == ["all"]:
+            mods = [m for m in MODULES if m != "system"]  # [all] really means all
         gate_cfg = doc.pop("gate", None)
         allowed = set(cfg)
         for k, v in doc.items():
@@ -121,6 +125,9 @@ def main():
         print(json.dumps({k: v for k, v in PROFILES.items()}, indent=2, default=str))
         return 0
     mods = list(MODULES) if a.modules == ["all"] else a.modules
+    if mods == ["wizard"]:
+        from nexus_bench.wizard import run_wizard
+        return run_wizard()
     for m in mods:
         if m not in MODULES:
             print(f"unknown module {m!r}; choose from {sorted(MODULES)}", file=sys.stderr)
@@ -153,21 +160,44 @@ def main():
         with open(a.gate) as f:
             gate_cfg.update(yaml.safe_load(f) or {})
     gate_cfg["req_fps"] = a.req_fps
+    cfg["gate_cfg_sha256"] = hashlib.sha256(
+        json.dumps(gate_cfg, sort_keys=True, default=str).encode()).hexdigest()
     random.seed(cfg["seed"]); np.random.seed(cfg["seed"] % (2**32))
-    timeout = a.worker_timeout_s or cfg.get("worker_timeout_s") or max(180.0, (cfg.get("duration_s", 60) + 180))
-    print(f"[nexus-bench] profile={a.profile} modules={mods} device={cfg['device']} "
-          f"runs={a.runs} timeout={timeout}s")
+    _, _, code = controller_run(cfg, mods, gate_cfg, req_fps=a.req_fps, runs=a.runs,
+                                timeout=(a.worker_timeout_s or cfg.get("worker_timeout_s")),
+                                cblas=cfg.get("blas_threads"), out=cfg.get("out", a.out),
+                                gate_strict=a.gate_strict,
+                                header=f"[nexus-bench] profile={a.profile} modules={mods} "
+                                       f"device={cfg['device']} runs={a.runs}")
+    return code
+
+def controller_run(cfg, mods, gate_cfg, req_fps=15, runs=1, timeout=None,
+                   cblas=None, out="reports", gate_strict=False, progress=None,
+                   header=None):
+    """Supervised run usable by the CLI and the wizard. Returns (paths, results)."""
+    import random as _random
+    import numpy as _np
+    timeout = timeout or max(180.0, (cfg.get("duration_s", 60) + 180))
+    if header:
+        print(header + f" timeout={timeout}s")
     results = {"_profile": profiler.profile(), "_config": cfg,
-               "_provenance": provenance.manifest(cfg)}
+               "_provenance": provenance.manifest(cfg),
+               "_power": power_mod.collect(cfg.get("device", "auto"))}
     cancelled = False
+    total = sum(runs for m in mods if m != "system")
+    idx = 0
     for m in mods:
         if m == "system":
             continue
-        for rep in range(a.runs):
-            key = m if a.runs == 1 else f"{m}__run{rep + 1}"
-            print(f"[nexus-bench] running {key} (isolated worker) ...", flush=True)
+        for rep in range(runs):
+            key = m if runs == 1 else f"{m}__run{rep + 1}"
+            idx += 1
+            if progress:
+                progress(key, idx, total)
+            else:
+                print(f"[nexus-bench] running {key} (isolated worker) ...", flush=True)
             try:
-                res, tele = _run_worker(MODULES[m], cfg, timeout, cfg.get("blas_threads"))
+                res, tele = _run_worker(MODULES[m], cfg, timeout, cblas)
                 res["controller_telemetry"] = tele
                 results[key] = res
             except KeyboardInterrupt:
@@ -184,19 +214,18 @@ def main():
                                 "errors": [f"supervisor: {e}"]}
         if cancelled:
             break
+    results = gate_mod.aggregate_runs(results)  # worst-case across --runs, individuals kept
     gate_res = gate_mod.evaluate({k: v for k, v in results.items() if "__run" not in k}, gate_cfg)
     results["_gate"] = gate_res
-    paths = report.write_all(results, cfg.get("out", a.out), req_fps=a.req_fps)
+    paths = report.write_all(results, out, req_fps=req_fps)
     print(f"[nexus-bench] GATE: {gate_res['verdict']}")
     for c in gate_res["checks"]:
         if not c["pass"]:
             print(f"  FAIL {c['check']}: {c['detail']}")
     print(f"[nexus-bench] wrote {paths['json']}\n[nexus-bench] wrote {paths['csv']}\n[nexus-bench] wrote {paths['html']}")
-    if cancelled:
-        return 130
-    if a.gate_strict and gate_res["verdict"] not in (S.PASS, S.PASS_WITH_HEADROOM):
-        return 3
-    return 0
+    code = 130 if cancelled else (3 if (gate_strict and gate_res["verdict"] not in
+                                        (S.PASS, S.PASS_WITH_HEADROOM)) else 0)
+    return paths, results, code
 
 if __name__ == "__main__":
     raise SystemExit(main())

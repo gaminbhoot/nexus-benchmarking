@@ -26,6 +26,10 @@ BASE = {
     "blas_threads": None,    # pin worker BLAS threads (None = inherit)
     "worker_timeout_s": None,# supervisor kill timeout per module (None = auto)
     "runs": 1,               # independent repetitions (variance)
+    "sustained_duration_s": 600,  # sustained qualification length (600 | 900)
+    "sustained_window_s": 60,     # evolution window for sustained runs
+    "concurrency": "separate-contexts",  # separate-contexts | serialized
+    "leak_threshold_mb": 300,     # RSS growth flag threshold (sustained)
     "throttle_temp_c": 83,   # evidence threshold for the thermal verdict
     "req_fps": 15,
     "out": "reports",

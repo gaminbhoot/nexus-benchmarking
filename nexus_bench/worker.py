@@ -24,7 +24,14 @@ def main():
         return 1
     try:
         res = mod.run(cfg)
-        res.setdefault("status", S.FULL)
+        st = res.get("status")
+        if st not in (S.FULL, S.PARTIAL, S.FALLBACK, S.UNSUPPORTED, S.FAILED,
+                      S.INCONCLUSIVE, S.ABORTED, S.NOT_RUN):
+            # Fail closed: a module that never established a valid measurement
+            # status must never be treated as a successful FULL measurement.
+            res["errors"] = list(res.get("errors", [])) + [
+                f"worker: no valid status established (got {st!r}) -> FAILED"]
+            res["status"] = S.FAILED
         _write(out_path, res)
         return 0
     except KeyboardInterrupt:

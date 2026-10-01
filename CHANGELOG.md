@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.4.0 — sustained qualification + seller operation
+
+- New `sustained` module (600/900 s): dual-agent representative workload
+  (UAV 640 + rover 480 + fusion) on paced independent streams with bounded
+  queues, 60 s evolution windows (throughput/p95/VRAM/temp/util/power/queue/
+  drops), memory-growth leak flag, WORKLOAD_OOM accounting, explicit depth
+  limitation. Gate consumes sustained evidence (steady FPS, drops, degradation,
+  duration, leak) and prefers sustained VRAM peaks.
+- Conservation accounting (`stream.py`): generated/acquired/enqueued/dequeued/
+  processed/delivered + producer/queue drops + failures + unfinished with a
+  checked identity; one `drop_pct` definition used by pipeline/integrated/
+  sustained. Full per-frame timestamp taxonomy (acquire/decode/enqueue/dequeue/
+  stages/output).
+- Concurrency contract (`concurrency.py`): separate-contexts (locked forwards),
+  serialized, and CUDA-only separate-lockfree (refuses elsewhere). Fixed a real
+  segfault: concurrent same-process Ultralytics forwards crash this stack
+  (faulthandler-traced); integrated uses the same contract.
+- UAV/rover sources truly separate (`--uav-video`/`--rover-video` with recorded
+  fallback chains; same-file use is visible, never silent).
+- VRAM kinds: CAPACITY_PROBE_OOM (exploratory, no veto) vs WORKLOAD_OOM (veto);
+  gate uses sustained peak first.
+- Matrix: real single-call batches with per-cell actual batch recorded; every
+  target FPS maps to its own deadline (15→66.7 ms, 30→33.3 ms).
+- Backends: ONNX CUDA verified via session providers (CPU fallback rejected by a
+  unit-tested helper). Accuracy: full candidate-vs-baseline mAP50/mAP50-95/
+  precision/recall/per-class-AP on shared `--val-data` + real-frame agreement
+  (video → dir → synthetic content; black frames never used); gate reads the
+  worst candidate's absolute drop.
+- Statuses: worker turns unset/unknown status into FAILED (was: default FULL).
+  Thermal tokens normalized; unknown/slowdown_cause_unknown → INCONCLUSIVE.
+  `full_stack` `[all]` expansion fixed + regression test.
+- Gate: FAIL (measured violation) vs INCONCLUSIVE (missing evidence) via check
+  kinds; hardware identity match (TARGET MISMATCH banner); dirty-tree policy
+  (`UNRELEASED / DIRTY SOURCE`, strict INCONCLUSIVE); `--runs` worst-case
+  aggregation.
+- Provenance: full SHA-256 of model, videos, datasets, profile+gate config.
+  Power section with measured/unavailable/n-a honesty.
+- Operator experience: `nexus-bench wizard` (discovery, plain-language progress,
+  no tracebacks, WHAT/MEANS/COLLECTED failures), `run_nexus_bench.{sh,bat}`
+  launchers, packaged `NEXUS_Qualification_<stamp>/` folder + ZIP + auto-open,
+  seller hero report (verdict, Why, summary table, sustained charts, power,
+  NOT TESTED), plain-text `qualification_summary.txt`. 85 tests green.
+
 ## 0.3.0 — qualification system
 
 - Explicit precision adapter (`yolo_util`): version-aware `quantize="fp16"` /

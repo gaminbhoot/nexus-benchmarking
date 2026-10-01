@@ -20,19 +20,20 @@ WINDOW_S = 5.0
 def _load(cfg, dev):
     import os
     mp = (cfg.get("model") or "").strip()
+    imgsz = cfg.get("imgsz", 640)  # deployment resolution from the profile, never hardcoded
     if mp:
         want_fp16 = cfg.get("precision") == "fp16"
         yolo, prec_rec = load_weights(mp, want_fp16=want_fp16)
         if yolo is None:
             raise RuntimeError(f"requested model unusable: {prec_rec.get('error')}")
         pk = precision_kwargs(want_fp16)
-        frames = [np.zeros((640, 640, 3), dtype=np.uint8)]
-        yolo.predict(frames, imgsz=640, device=dev, verbose=False, **pk)
+        frames = [np.zeros((imgsz, imgsz, 3), dtype=np.uint8)]
+        yolo.predict(frames, imgsz=imgsz, device=dev, verbose=False, **pk)
         if not check_effective(yolo, prec_rec):
             raise RuntimeError(f"precision fail-closed: requested {prec_rec['requested']}, "
                                f"effective {prec_rec['effective']}")
         def step():
-            yolo.predict(frames, imgsz=640, device=dev, verbose=False, **pk)
+            yolo.predict(frames, imgsz=imgsz, device=dev, verbose=False, **pk)
         return step, f"yolo ({mp} @ {prec_rec['effective']})"
     import torch
     n = 2048 if dev == "cuda" else 1024
@@ -90,13 +91,17 @@ def run(cfg):
         wall = time.time() - t0
     if windows:
         import statistics as _st
-        ws = sorted(windows)
+        # Temporal order PRESERVED: burst = first window, steady = the rest.
+        burst = windows[0]
+        rest = windows[1:] or windows
+        steady_med = _st.median(rest)
         out["tests"]["windows_ips"] = [round(w, 2) for w in windows]
         out["tests"]["steady"] = {
-            "burst_ips": round(ws[-1], 2), "steady_median_ips": round(_st.median(ws[1:]), 2),
-            "min_window_ips": round(ws[0], 2),
-            "burst_steady_ratio": round(ws[-1] / _st.median(ws[1:]), 3) if _st.median(ws[1:]) else None,
-            "degradation_pct": round(100 * (ws[-1] - _st.median(ws[1:])) / ws[-1], 1) if ws[-1] else 0}
+            "burst_ips": round(burst, 2), "steady_median_ips": round(steady_med, 2),
+            "min_window_ips": round(min(windows), 2),
+            "final_window_ips": round(windows[-1], 2),
+            "burst_steady_ratio": round(burst / steady_med, 3) if steady_med else None,
+            "degradation_pct": round(100 * (burst - steady_med) / burst, 1) if burst else 0}
         out["tests"]["window_telemetry"] = win_telemetry
     out["tests"]["sustained"] = {"seconds": round(wall, 1), "iters": it,
                                  "avg_ips": round(it / wall, 2) if wall else 0}
@@ -116,13 +121,13 @@ def run(cfg):
         if hot and clock_drop > 0.10 and busy:
             verdict, evidence = "likely", ev + " — temp high with clock drop under load"
         elif degr > 0.10:
-            verdict, evidence = "slowdown without thermal evidence", ev + " — check power/scheduling"
+            verdict, evidence = "slowdown_cause_unknown", ev + " — check power/scheduling"
         else:
-            verdict, evidence = "none detected", ev
+            verdict, evidence = "none_detected", ev
     elif windows and out["tests"]["steady"]["degradation_pct"] > 10:
-        verdict, evidence = "slowdown, cause unknown", "no temp/clock telemetry to attribute it"
+        verdict, evidence = "slowdown_cause_unknown", "no temp/clock telemetry to attribute it"
     elif windows:
-        verdict, evidence = "none detected", "no windowed degradation"
+        verdict, evidence = "none_detected", "no windowed degradation"
     out["tests"]["throttling"] = verdict
     out["tests"]["throttling_evidence"] = evidence
     out["telemetry"] = mon.summary()

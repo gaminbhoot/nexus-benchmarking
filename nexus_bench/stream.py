@@ -1,9 +1,22 @@
-"""Paced frame streams: virtual-time replay with bounded queues.
+"""Paced frame streams with conservation accounting and latency taxonomy.
 
-A producer thread acquires frames (video file, image dir, synthetic generator)
-paced at target_fps in REAL time, stamping capture time. The consumer sees what
-production sees: queue wait, drops on overrun, acquisition (read+decode) latency
-measured independently in the producer. No virtual-time cheating.
+Arrival model: camera/input clock -> acquisition/decode (producer thread) ->
+bounded queue -> processing (consumer). Slow processing NEVER slows the input
+clock: the producer keeps pacing and counts producer_drops when the queue is
+full. Every frame is counted exactly once:
+
+  generated = delivered + producer_drops + queue_drops
+              + processing_failures + unfinished
+
+Drop definition (used identically in every module):
+  drop_pct = 100 * (generated - delivered) / generated
+
+Per-frame timestamps: t_acquire_start -> t_decode_done (= t_capture) ->
+t_enqueue -> t_dequeue -> stages -> t_output.
+  acquisition_latency = t_decode_done - t_acquire_start
+  queue_wait          = t_dequeue - t_enqueue
+  processing_latency  = t_output - t_dequeue
+  total input->output = t_output - t_capture
 """
 import os
 import queue
@@ -14,33 +27,94 @@ import numpy as np
 
 _SENTINEL = object()
 
+class FrameAccount:
+    """Conservation counters for one stream. All ints, all exact."""
+    def __init__(self):
+        self.generated = 0
+        self.acquired = 0
+        self.enqueued = 0
+        self.dequeued = 0
+        self.processed = 0
+        self.delivered = 0
+        self.producer_drops = 0
+        self.queue_drops = 0
+        self.processing_failures = 0
+        self.unfinished = 0
+
+    def finalize(self, remaining_in_queue):
+        self.unfinished = (self.dequeued - self.processed - self.processing_failures
+                           + remaining_in_queue)
+
+    def as_dict(self):
+        return {k: getattr(self, k) for k in
+                ("generated", "acquired", "enqueued", "dequeued", "processed",
+                 "delivered", "producer_drops", "queue_drops",
+                 "processing_failures", "unfinished")}
+
+    def check_conservation(self):
+        d = self.as_dict()
+        lhs = d["generated"]
+        rhs = (d["delivered"] + d["producer_drops"] + d["queue_drops"]
+               + d["processing_failures"] + d["unfinished"])
+        return lhs == rhs, {"generated": lhs, "accounted": rhs}
+
+def drop_pct(generated, delivered):
+    """THE drop definition. Same function, every module."""
+    if not generated:
+        return 0.0
+    return round(100.0 * (generated - delivered) / generated, 2)
+
 class PacedSource:
-    def __init__(self, cfg, target_fps=30.0, queue_size=8, seed_key="video"):
+    def __init__(self, cfg, target_fps=30.0, queue_size=8, source_keys=("video",)):
+        """source_keys: ordered fallback chain, e.g. ("uav_video", "video").
+        First existing source wins; the choice is recorded, never silent."""
         self.cfg = cfg
         self.target_fps = target_fps or 30.0
         self.q = queue.Queue(maxsize=queue_size)
-        self.emitted = 0
-        self.dropped_producer = 0
+        self.acct = FrameAccount()
         self.acquire_ms = []
-        vp = (cfg.get("video") or "").strip()
-        dp = (cfg.get("image_dir") or "").strip()
-        if vp and os.path.exists(vp):
-            self.tag = f"video:{vp}"
-        elif dp and os.path.isdir(dp):
-            self.tag = f"image_dir:{dp}"
-        else:
-            self.tag = "synthetic_moving_squares (labelled)"
+        self.source_keys = tuple(source_keys)
+        self.source_used = None   # which key won, e.g. "uav_video"
+        self.source_kind = "synthetic"
+        self.source_detail = ""
         self._stop = threading.Event()
         self._thread = None
         self._exhausted = threading.Event()
+        self._resolve()
+
+    def _resolve(self):
+        import cv2  # noqa (ensures decode backend present)
+        for key in self.source_keys:
+            vp = (self.cfg.get(key) or "").strip()
+            if vp and os.path.exists(vp):
+                self.source_used, self.source_kind = key, "video"
+                self.source_detail = vp
+                return
+        dp = (self.cfg.get("image_dir") or "").strip()
+        if dp and os.path.isdir(dp):
+            files = sorted(p for p in os.listdir(dp)
+                           if p.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")))
+            if files:
+                self.source_used, self.source_kind = "image_dir", "image_dir"
+                self.source_detail = f"{dp} ({len(files)} files)"
+                return
+        tried = [f"{k}={self.cfg.get(k) or ''!r}" for k in self.source_keys]
+        self.source_used, self.source_kind = None, "synthetic"
+        self.source_detail = (f"synthetic_moving_squares (labelled fallback; tried {tried}"
+                              + (" + image_dir" if not dp else "") + ")")
+
+    @property
+    def real_pixels(self):
+        return self.source_kind in ("video", "image_dir")
+
+    @property
+    def tag(self):
+        return self.source_detail
 
     def _frames(self):
         import cv2
-        vp = (self.cfg.get("video") or "").strip()
-        dp = (self.cfg.get("image_dir") or "").strip()
-        if vp and os.path.exists(vp):
-            cap = cv2.VideoCapture(vp)
-            self.tag = f"video:{vp}"
+        if self.source_kind == "video":
+            cap = cv2.VideoCapture(self.source_detail)
             try:
                 while not self._stop.is_set():
                     ok, f = cap.read()
@@ -50,21 +124,19 @@ class PacedSource:
             finally:
                 cap.release()
             return
-        if dp and os.path.isdir(dp):
-            files = sorted(p for p in os.listdir(dp)
-                           if p.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")))
-            self.tag = f"image_dir:{dp} ({len(files)} files)"
-            for f in files:
+        if self.source_kind == "image_dir":
+            for f in sorted(os.listdir(self.source_detail.split(" (")[0])):
                 if self._stop.is_set():
                     break
-                img = cv2.imread(os.path.join(dp, f))
+                if not f.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")):
+                    continue
+                img = cv2.imread(os.path.join(self.source_detail.split(" (")[0], f))
                 if img is not None:
                     yield cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             return
         from nexus_bench.vision_bench import _moving_squares
-        n = self.cfg.get("agent_frames", 120)
-        self.tag = "synthetic_moving_squares (labelled)"
-        yield from _moving_squares(n, seed=self.cfg.get("seed", 0))
+        yield from _moving_squares(self.cfg.get("agent_frames", 600),
+                                   seed=self.cfg.get("seed", 0))
 
     def _produce(self):
         period = 1.0 / self.target_fps
@@ -76,16 +148,24 @@ class PacedSource:
                 frame = next(it)
             except StopIteration:
                 break
-            self.acquire_ms.append((time.perf_counter() - ta) * 1000)  # read+decode
-            self.emitted += 1
-            due = t0 + self.emitted * period
+            decode_ms = (time.perf_counter() - ta) * 1000
+            self.acct.generated += 1
+            self.acct.acquired += 1
+            self.acquire_ms.append(decode_ms)
+            due = t0 + self.acct.generated * period
             now = time.perf_counter()
             if now < due:
-                time.sleep(due - now)  # pace to target_fps: real-time arrival
+                time.sleep(due - now)  # real-time arrival, independent of processing
+            meta = {"seq": self.acct.generated,
+                    "t_acquire_start": ta,
+                    "t_decode_done": ta + decode_ms / 1000.0,
+                    "t_capture": time.time(),
+                    "t_enqueue": time.time()}
             try:
-                self.q.put_nowait((frame, time.time(), self.emitted))
+                self.q.put_nowait((frame, meta))
+                self.acct.enqueued += 1
             except queue.Full:
-                self.dropped_producer += 1
+                self.acct.producer_drops += 1
         self._exhausted.set()
 
     def start(self):
@@ -94,16 +174,20 @@ class PacedSource:
         return self
 
     def get(self, timeout=5.0):
+        """Returns (frame, meta) with meta['t_dequeue'] stamped, None when
+        exhausted+empty, or 'retry' when still producing."""
         try:
-            return self.q.get(timeout=timeout)
+            frame, meta = self.q.get(timeout=timeout)
+            meta["t_dequeue"] = time.time()
+            self.acct.dequeued += 1
+            return frame, meta
         except queue.Empty:
-            return None if self._exhausted.is_set() and self.q.empty() else "retry"
+            if self._exhausted.is_set():
+                return None
+            return "retry"
 
     def stop(self):
         self._stop.set()
         if self._thread:
             self._thread.join(timeout=5)
-
-    @property
-    def real_pixels(self):
-        return self.tag.startswith("video:") or self.tag.startswith("image_dir:")
+        self.acct.finalize(self.q.qsize())

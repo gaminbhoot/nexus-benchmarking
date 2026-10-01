@@ -31,9 +31,11 @@ def _assess(mod, res, req_fps):
     """Returns (verdict, [reasons]). Only measured numbers count."""
     from nexus_bench import statuses as S
     reasons = []
-    errs = " ".join(res.get("errors", [])).lower()
-    if any(k in errs for k in _OOM_WORDS):
-        return "exceeds limits", ["out-of-memory during measurement"]
+    errs = [str(e) for e in res.get("errors", [])]
+    workload_oom = any(("out of memory" in e.lower() or "oom" in e.lower())
+                       and "capacity_probe_oom" not in e.lower() for e in errs)
+    if workload_oom:
+        return "exceeds limits", ["out-of-memory during workload measurement"]
     if res.get("status") in (S.UNSUPPORTED, S.NOT_RUN) or (
             res.get("errors") and not res.get("tests")):
         return "unsupported", [f"status={res.get('status')}: no real workload executed"]
@@ -159,6 +161,183 @@ def _chart(rows):
     except Exception:
         return "<p>(chart unavailable)</p>"
 
+def _chart(rows):
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        pts = [(f"{r['module']}/{r['test']}"[:38], r["median_ms"], r.get("p95_ms")) for r in rows
+               if r.get("median_ms") is not None]
+        if not pts:
+            return ""
+        pts = pts[:20]
+        labels = [p[0] for p in pts][::-1]
+        y = range(len(labels))
+        fig, ax = plt.subplots(figsize=(9, max(3, len(pts) * 0.4)))
+        ax.barh(list(y), [p[1] for p in pts][::-1], label="median")
+        ax.barh(list(y), [(p[2] or p[1]) for p in pts][::-1], alpha=0.35, label="p95")
+        ax.set_yticks(list(y), labels, fontsize=8)
+        ax.set_xlabel("ms"); ax.legend(); fig.tight_layout()
+        buf = io.BytesIO(); fig.savefig(buf, format="png"); plt.close(fig)
+        return '<img src="data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode() + '"/>'
+    except Exception:
+        return "<p>(chart unavailable)</p>"
+
+def _line_chart(series, title, ylabel, window_s=60):
+    """Time-series chart. series: {label: [values per window]}. Chronological."""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(9, 3.2))
+        for label, vals in series.items():
+            xs = [i * window_s / 60.0 for i, v in enumerate(vals) if v is not None]
+            ys = [v for v in vals if v is not None]
+            if ys:
+                ax.plot(xs, ys, marker="o", markersize=3, label=label)
+        ax.set_title(title); ax.set_xlabel("minutes"); ax.set_ylabel(ylabel)
+        ax.legend(fontsize=8); ax.grid(True, alpha=0.3); fig.tight_layout()
+        buf = io.BytesIO(); fig.savefig(buf, format="png"); plt.close(fig)
+        return '<img src="data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode() + '"/>'
+    except Exception:
+        return "<p>(chart unavailable)</p>"
+
+def _sustained_section(results):
+    sus = results.get("sustained", {})
+    if not sus or not isinstance(sus.get("tests"), dict):
+        return "<p>Sustained qualification was not run in this report.</p>"
+    t = sus["tests"]
+    window_s = (sus.get("config") or {}).get("sustained_window_s", 60)
+    per = t.get("per_agent", {})
+    charts = ""
+    fps_series, p95_series = {}, {}
+    for agent, a in per.items():
+        if isinstance(a, dict):
+            if a.get("windows_fps"):
+                fps_series[f"{agent} FPS"] = a["windows_fps"]
+            if a.get("windows_p95_ms"):
+                p95_series[f"{agent} p95 (ms)"] = a["windows_p95_ms"]
+    if fps_series:
+        charts += "<h3>FPS vs time</h3>" + _line_chart(fps_series, "Throughput per window", "FPS", window_s)
+    if p95_series:
+        charts += "<h3>p95 latency vs time</h3>" + _line_chart(p95_series, "p95 latency per window", "ms", window_s)
+    evo = t.get("resource_evolution", {}) or {}
+    for key, title, unit in (("vram_pct", "VRAM vs time", "%"),
+                             ("gpu_temp_c", "GPU temperature vs time", "C"),
+                             ("gpu_util_pct", "GPU utilization vs time", "%"),
+                             ("gpu_power_w", "GPU power vs time", "W")):
+        entry = evo.get(key) or {}
+        if isinstance(entry, dict) and entry.get("per_window"):
+            charts += f"<h3>{title}</h3>" + _line_chart({key: entry["per_window"]}, title, unit, window_s)
+    qd = t.get("queue_depth_max_per_window", {}) or {}
+    if any(qd.values()):
+        charts += "<h3>Queue depth vs time</h3>" + _line_chart(
+            {k: v for k, v in qd.items() if v}, "Max queue depth per window", "frames", window_s)
+    rows = ""
+    for agent, a in per.items():
+        if not isinstance(a, dict):
+            continue
+        rows += (f"<tr><td>{agent}</td><td>{a.get('initial_fps')}</td>"
+                 f"<td>{a.get('steady_fps')}</td><td>{a.get('min_fps')}</td>"
+                 f"<td>{a.get('final_fps')}</td><td>{a.get('degradation_pct')}%</td>"
+                 f"<td>{a.get('max_p95_ms')}</td><td>{a.get('drop_pct')}%</td>"
+                 f"<td>{a.get('deadline_miss_pct')}%</td><td>{a.get('oom_events')}</td></tr>")
+    mg = t.get("memory_growth", {}) or {}
+    table = (f"<table><tr><th>Agent</th><th>First FPS</th><th>Steady FPS</th><th>Worst FPS</th>"
+             f"<th>Final FPS</th><th>Degradation</th><th>Max p95</th><th>Drops</th>"
+             f"<th>Misses</th><th>OOMs</th></tr>{rows}</table>"
+             f"<p>Memory growth: {mg.get('growth')} MB "
+             f"({'LEAK SUSPECTED' if mg.get('leak_suspected') else 'no leak signal'}). "
+             f"Fusion ticks: {(t.get('fusion') or {}).get('ticks')}. "
+             f"Limitations: {'; '.join((sus.get('config') or {}).get('limitations', []))}</p>")
+    return table + charts
+
+def _summary_rows(results):
+    """Metric / Result / Limit / Status rows for humans. Limits from gate checks."""
+    gate = results.get("_gate", {}) or {}
+    checks = {c["check"]: c for c in gate.get("checks", [])}
+    rows = []
+
+    def row(metric, result, limit, ok):
+        rows.append((metric, result, limit, "PASS" if ok else "FAIL"))
+
+    sus = (results.get("sustained", {}) or {}).get("tests", {}) or {}
+    per = sus.get("per_agent", {}) or {}
+    for agent in ("uav", "rover"):
+        a = per.get(agent) or {}
+        c = checks.get(f"sustained.{agent}.steady_fps>=10", {})
+        row(f"{agent.upper()} steady FPS", a.get("steady_fps", "—"),
+            c.get("detail", ">=10 fps"), c.get("pass", False))
+        row(f"{agent.upper()} drops", f"{a.get('drop_pct', '—')}%", "<=5%",
+            (a.get("drop_pct", 100) or 100) <= 5)
+    pipe = ((results.get("pipeline", {}) or {}).get("tests", {}) or {}).get("end_to_end_ms", {}) or {}
+    if pipe:
+        row("Pipeline p95", f"{pipe.get('p95_ms', '—')} ms", "<=66.7 ms",
+            (pipe.get("p95_ms", 1e9) or 1e9) <= 66.7)
+    evo = sus.get("resource_evolution", {}) or {}
+    vram = (evo.get("vram_pct") or {}) if isinstance(evo.get("vram_pct"), dict) else {}
+    if vram.get("max") is not None:
+        row("Peak VRAM", f"{vram['max']}%", "<=85%", vram["max"] <= 85)
+    tmp = (evo.get("gpu_temp_c") or {}) if isinstance(evo.get("gpu_temp_c"), dict) else {}
+    if tmp.get("max") is not None:
+        row("Max GPU temp", f"{tmp['max']} C", "no throttle evidence",
+            ((results.get("thermal", {}) or {}).get("tests", {}) or {}).get("throttling") == "none_detected")
+    comp = ((results.get("accuracy", {}) or {}).get("tests", {}) or {}).get("map_comparison", {}) or {}
+    if comp.get("map50_drop_abs") is not None:
+        row("Accuracy drop (mAP50)", comp["map50_drop_abs"], "<=0.05",
+            comp["map50_drop_abs"] <= 0.05)
+    ooms = sum((a.get("oom_events") or 0) for a in per.values() if isinstance(a, dict))
+    row("Workload OOMs", ooms, "0", ooms == 0)
+    return "".join(f"<tr><td>{m}</td><td>{r}</td><td>{l}</td>"
+                   f"<td style='font-weight:bold;color:{'green' if s == 'PASS' else 'red'}'>{s}</td></tr>"
+                   for m, r, l, s in rows)
+
+def plain_summary(results):
+    """Plain-text summary a seller can send by email/WhatsApp. No jargon."""
+    gate = results.get("_gate", {}) or {}
+    verdict = gate.get("verdict", "INCONCLUSIVE")
+    prof = results.get("_profile", {}) or {}
+    gpu = (prof.get("gpu") or {}).get("name", "unknown GPU")
+    ram = (prof.get("memory") or {}).get("ram_total_gb", "?")
+    cfg = results.get("_config", {}) or {}
+    dur = (results.get("sustained", {}) or {}).get("config", {}).get("duration_s") \
+        or cfg.get("duration_s", "?")
+    fails = [c for c in gate.get("checks", []) if not c["pass"]]
+    not_tested = sorted(k for k, v in results.items()
+                        if not k.startswith("_") and isinstance(v, dict)
+                        and "__run" not in k and v.get("status") != "FULL")
+    lines = [
+        "NEXUS Hardware Qualification",
+        f"Machine GPU: {gpu}",
+        f"RAM: {ram} GB",
+        f"Test duration: {dur} seconds",
+        f"NEXUS target: {cfg.get('req_fps', 15)} FPS",
+        "",
+        f"RESULT: {verdict}",
+        "",
+    ]
+    if verdict == "PASS" or verdict == "PASS_WITH_HEADROOM":
+        lines.append("Reason: all required workloads held the target throughput for the "
+                     "full run with no workload OOM, VRAM within limits, no throttling "
+                     "evidence, and accuracy within tolerance.")
+    elif verdict == "FAIL":
+        lines.append("Reason:")
+        for c in fails[:6]:
+            lines.append(f"- {c['check']}: {c['detail']}")
+    else:
+        lines.append("Reason: the evidence was insufficient to certify the hardware. "
+                     "The benchmark ran, but a strict purchase decision needs more proof.")
+        for c in fails[:6]:
+            lines.append(f"- {c['check']}: {c['detail']}")
+    if not_tested:
+        lines.append("")
+        lines.append(f"Not fully tested: {', '.join(sorted(set(not_tested)))}")
+    lines += ["",
+              "Detailed report: NEXUS_Qualification_Report.html",
+              "This summary cannot overrule the detailed report: only FULL-status "
+              "measurements count toward qualification."]
+    return "\n".join(lines)
+
 def _html(results, rows, stamp):
     feas = results["_meta"]["feasibility"]
     why = results["_meta"]["feasibility_reasons"]
@@ -179,14 +358,54 @@ def _html(results, rows, stamp):
     prof = results.get("_profile", {})
     gate_verdict = gate.get("verdict", "not-evaluated")
     states = json.dumps(gate.get("states", {}), default=str)
-    prov_json = json.dumps(prov, indent=2, default=str)[:2500]
-    return f"""<html><head><title>NEXUS benchmark {stamp}</title>
+    prov_json = json.dumps(prov, indent=2, default=str)[:4000]
+    color = {"PASS": "green", "PASS_WITH_HEADROOM": "green", "FAIL": "red"}.get(gate_verdict, "#b26a00")
+    why_bullets = "".join(f"<li><b>{c['check']}</b>: {c['detail']}</li>"
+                          for c in gate.get("checks", []) if not c["pass"]) or \
+        "<li>All required workloads held the target throughput with no workload OOM, " \
+        "VRAM within limits, no throttling evidence, and accuracy within tolerance.</li>"
+    hw_fail = [c for c in gate.get("checks", []) if not c["pass"] and c["check"].startswith("hardware.")]
+    hw_banner = ("<div style='background:#ffe0e0;padding:12px;border:2px solid red'>"
+                 "<b>TARGET HARDWARE DOES NOT MATCH TEST HARDWARE.</b> This report must not "
+                 "be presented as a qualification of a different machine.</div>"
+                 if hw_fail else "")
+    dirty = (prov.get("git") or {}).get("dirty")
+    dirty_banner = ("<div style='background:#fff3cd;padding:12px;border:2px solid #b26a00'>"
+                    "<b>UNRELEASED / DIRTY SOURCE.</b> The benchmark tree had uncommitted "
+                    "changes; results are not reproducible from the commit SHA alone.</div>"
+                    if dirty else "")
+    # NOT TESTED = every module whose own status is not FULL evidence:
+    not_tested = sorted(k for k, v in results.items()
+                        if not k.startswith("_") and isinstance(v, dict)
+                        and "__run" not in k and v.get("status") != "FULL")
+    power = results.get("_power", {}) or {}
+    power_rows = "".join(
+        f"<tr><td>{k}</td><td>{v.get('value')}</td><td>{v.get('how')}</td></tr>"
+        for k, v in (power.get("signals") or {}).items())
+    machine = f"{(prof.get('cpu') or {}).get('brand', '?')} / " \
+              f"{(prof.get('gpu') or {}).get('name', (prof.get('gpu') or {}).get('note', '?'))} / " \
+              f"{(prof.get('memory') or {}).get('ram_total_gb', '?')} GB RAM"
+    dur = (results.get("sustained", {}) or {}).get("config", {}).get("sustained_duration_s", "—")
+    return f"""<html><head><title>NEXUS Hardware Qualification {stamp}</title>
 <style>body{{font-family:sans-serif;max-width:1100px;margin:auto;padding:20px}}
-table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding:4px 8px;font-size:13px}}</style>
-</head><body><h1>NEXUS Benchmark Report — {stamp} UTC</h1>
-<h2>Purchase gate: {gate_verdict}</h2>
+table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding:4px 8px;font-size:13px}}
+.hero{{text-align:center;padding:24px;border:3px solid {color};margin:16px 0}}
+.hero h1{{font-size:44px;margin:8px;color:{color}}}</style>
+</head><body>
+<div class="hero"><div>NEXUS HARDWARE QUALIFICATION</div>
+<div style="font-size:14px">{machine} · sustained {dur}s · target {results['_meta']['req_fps']} FPS</div>
+<h1>{gate_verdict}</h1></div>
+{hw_banner}{dirty_banner}
+<h2>Why?</h2><ul>{why_bullets}</ul>
+<h2>Summary</h2>
+<table><tr><th>Metric</th><th>Result</th><th>Limit</th><th>Status</th></tr>{_summary_rows(results)}</table>
+<h2>Sustained qualification</h2>{_sustained_section(results)}
+<h2>Purchase gate checks</h2>
 <table><tr><th>Check</th><th>Result</th><th>Detail</th></tr>{gate_rows}</table>
-<p>Only modules with status FULL count toward the gate. States: {states}</p>
+<p>Only FULL-status measurements count. States: {states}. NOT TESTED / non-FULL: {', '.join(not_tested) or 'none'}</p>
+<h2>Power (measured vs unavailable — never invented)</h2>
+<table><tr><th>Signal</th><th>Value</th><th>How</th></tr>{power_rows or '<tr><td colspan=3>no power section</td></tr>'}</table>
+<p>{(power.get('coverage') or {}).get('note', '')}</p>
 <h2>Provenance</h2><pre>{prov_json}</pre>
 <h2>Platform</h2><pre>{json.dumps(prof, indent=2, default=str)[:3000]}</pre>
 <h2>Feasibility (required: {results['_meta']['req_fps']} FPS; p95 + misses decide)</h2>
@@ -194,6 +413,6 @@ table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding
 <h2>Latency (median + p95, ms)</h2>{_chart(rows)}
 <h2>Detailed measurements</h2>
 <table><tr><th>Module</th><th>Test</th><th>Median</th><th>P95</th><th>P99</th><th>FPS/IPS</th><th>Miss%</th><th>Drop%</th><th>Error/Value</th></tr>{det}</table>
-<p>Verdicts use tail latency and measured throughput only. A "limited" module may show a
-fine median — check its p95/miss columns. Conclusions reflect measured numbers only.</p>
+<p>A nice-looking report never overrules missing evidence: PASS requires every
+critical check above to hold on FULL-status measurements.</p>
 </body></html>"""

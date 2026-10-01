@@ -60,7 +60,8 @@ def run(cfg):
                     except RuntimeError:
                         oom_at = mb
                         out["errors"].append(
-                            f"VRAM OOM at ladder step {mb}MB (recovered) — usable ceiling found")
+                            f"CAPACITY_PROBE_OOM at ladder step {mb}MB (recovered, exploratory "
+                            f"only — not a workload failure, no gate veto)")
                         torch.cuda.empty_cache()
                         break
                 out["tests"]["vram_ladder"] = steps
@@ -105,7 +106,8 @@ def run(cfg):
                             "free_after": round(free_after, 1),
                             "safe_headroom": round(free_after, 1)}
                     except RuntimeError as e:
-                        out["errors"].append(f"model footprint OOM — model does not fit: {str(e)[:200]}")
+                        out["errors"].append(f"WORKLOAD_OOM: model footprint does not fit — "
+                                             f"{str(e)[:200]}")
                         torch.cuda.empty_cache()
                     except Exception as e:
                         out["errors"].append(f"model footprint: {e}")

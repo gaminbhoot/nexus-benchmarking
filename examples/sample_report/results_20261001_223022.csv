@@ -1,0 +1,22 @@
+module,test,mean_ms,median_ms,p95_ms,p99_ms,throughput_ips,throughput_fps,per_image_ms,total_ms,avg_ips,kmsgs_per_s,degradation_pct,deadline_miss_pct,drop_pct,value,error
+pipeline,end_to_end_ms,51.461,16.245,367.637,643.676,19.432,14.63,,,,,,7.63,2.48,,
+thermal,windows_ips,,,,,,,,,,,,,,,
+thermal,steady,,,,,,,,,,,0.0,,,,
+thermal,window_telemetry,,,,,,,,,,,,,,,
+thermal,sustained,,,,,,,,,177.79,,,,,,
+thermal,throttling,,,,,,,,,,,,,,none_detected,
+thermal,throttling_evidence,,,,,,,,,,,,,,no windowed degradation,
+memory,ram_alloc_touch_16mb_gbps,,,,,,,,,,,,,,4.38,
+memory,ram_alloc_touch_64mb_gbps,,,,,,,,,,,,,,23.66,
+memory,ram_alloc_touch_256mb_gbps,,,,,,,,,,,,,,23.26,
+memory,ram_total_gb,,,,,,,,,,,,,,25.77,
+memory,vram_note,,,,,,,,,,,,,,VRAM ladder probed on CUDA only,
+memory,proc_peak_rss_mb,,,,,,,,,,,,,,225.0,
+memory,ERROR,,,,,,,,,,,,,,,worker: no valid status established (got None) -> FAILED
+comms,mavlink_serialize,,,,,,,,3.0,,166.51,,,,,
+comms,mavlink_parse_crc,,,,,,,,2.84,,176.0,,,,,
+comms,loopback_udp_rtt_ms,0.969,0.41,2.063,7.915,1031.793,,,,,,,,,,
+comms,telemetry_process_ms,0.002,0.001,0.002,0.002,662478.95,,,,,,,,,,
+comms,sim_link_model_ms,13.319,10.855,28.66,40.543,75.082,,,,,,,,,,
+comms,ros2,,,,,,,,,,,,,,unavailable (rclpy not installed),
+comms,ERROR,,,,,,,,,,,,,,,worker: no valid status established (got None) -> FAILED

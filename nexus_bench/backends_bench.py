@@ -21,6 +21,19 @@ def _have(pkg):
     except Exception:
         return False
 
+def onnx_cuda_session(exp_path):
+    """Open an ONNX session that is PROVEN CUDA. Returns (session, None) or
+    (None, reason). A CPU-only provider list is rejected outright — CPU fallback
+    must never masquerade as a CUDA result."""
+    import onnxruntime as ort
+    sess = ort.InferenceSession(str(exp_path),
+                                providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
+    provs = sess.get_providers()
+    if "CUDAExecutionProvider" not in provs:
+        return None, (f"CUDA EP absent (providers={provs}) — CPU fallback rejected, "
+                       f"no numbers reported")
+    return sess, None
+
 def _bench_torch(model, frames, imgsz, dev, pk, repeats, warmup):
     for _ in range(warmup):
         model.predict(frames, imgsz=imgsz, device=dev, verbose=False, **pk)
@@ -66,25 +79,29 @@ def run(cfg):
                     out["config"]["fp16_effective"] = False
             except Exception as e:
                 out["errors"].append(f"torch_fp16 unavailable: {e}")
-            # --- ONNX Runtime CUDA (export once, same frames) ---
+            # --- ONNX Runtime CUDA (export once, same frames; CUDA verified) ---
             if _have("onnxruntime"):
                 try:
-                    import onnxruntime as ort
                     exp = m32.export(format="onnx", imgsz=imgsz, verbose=False)
-                    sess = ort.InferenceSession(str(exp),
-                                                providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
-                    inp = sess.get_inputs()[0]
-                    x = np.zeros((1, 3, imgsz, imgsz), dtype=np.float32)
-                    for _ in range(w):
-                        sess.run(None, {inp.name: x})
-                    ts = []
-                    for _ in range(r):
-                        t0 = time.perf_counter()
-                        sess.run(None, {inp.name: x})
-                        ts.append((time.perf_counter() - t0) * 1000)
-                    d = summarize(ts)
-                    d["provider"] = sess.get_providers()[0] if sess.get_providers() else "unknown"
-                    out["tests"]["onnx_ms"] = d
+                    sess, why = onnx_cuda_session(exp)
+                    if sess is None:
+                        out["tests"]["onnx_cuda"] = S.NOT_RUN
+                        out["errors"].append(f"NOT_RUN onnx_cuda: {why}")
+                    else:
+                        import onnxruntime as ort
+                        inp = sess.get_inputs()[0]
+                        x = np.zeros((1, 3, imgsz, imgsz), dtype=np.float32)
+                        for _ in range(w):
+                            sess.run(None, {inp.name: x})
+                        ts = []
+                        for _ in range(r):
+                            t0 = time.perf_counter()
+                            sess.run(None, {inp.name: x})
+                            ts.append((time.perf_counter() - t0) * 1000)
+                        d = summarize(ts)
+                        d["provider"] = "CUDAExecutionProvider (verified in session providers)"
+                        d["ort_device"] = getattr(ort, "get_device", lambda: "unknown")()
+                        out["tests"]["onnx_cuda_ms"] = d
                 except Exception as e:
                     out["errors"].append(f"onnx: {e}")
             else:

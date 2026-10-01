@@ -13,7 +13,8 @@ from nexus_bench.profiles import resolve_device
 from nexus_bench.reid_embed import embed_crops, load_embedder
 from nexus_bench.stats import summarize
 from nexus_bench.tracking_bench import Tracker, _crop_for
-from nexus_bench.yolo_util import load_weights, precision_kwargs
+from nexus_bench import statuses as S
+from nexus_bench.yolo_util import check_effective, load_weights, precision_kwargs
 
 def _moving_squares(n=20, h=480, w=640, k=4, seed=0):
     rng = np.random.default_rng(seed)
@@ -48,19 +49,20 @@ def run(cfg):
     n = max(10, cfg.get("repeats", 20))
     frames = _moving_squares(n, seed=cfg.get("seed", 0))
     out = {"module": "vision", "config": {**cfg, "resolved_device": dev},
-           "tests": {}, "errors": []}
+           "tests": {}, "errors": [], "status": S.FULL}
     with Monitor() as mon:
-        # --- detection source ---
-        yolo, dtag = load_weights((cfg.get("model") or "").strip(),
-                                  want_fp16=(cfg.get("precision") == "fp16"))
-        pk = precision_kwargs(yolo, cfg.get("precision") == "fp16") if yolo else {}
+        # --- detection source (explicit adapter; verified, fail-closed) ---
+        want_fp16 = cfg.get("precision") == "fp16"
+        yolo, prec_rec = load_weights((cfg.get("model") or "").strip(), want_fp16=want_fp16)
+        pk = precision_kwargs(want_fp16) if yolo else {}
+        out["config"]["precision"] = prec_rec
+        verified = False
         if yolo is None:
-            # Informational only (stays in config, NOT errors): the tracking
-            # pipeline still ran for real; only the detection source is synthetic.
+            out["status"] = S.PARTIAL
             out["config"]["detector"] = ("motion_detector_fallback (tracks pipeline cost only, "
                                          "not detection quality)")
         else:
-            out["config"]["detector"] = dtag
+            out["config"]["detector"] = f"yolo ({prec_rec['requested']})"
         try:
             model, tag = load_embedder(dev, (cfg.get("reid_model") or "").strip())
             out["config"]["embedder"] = tag
@@ -74,6 +76,15 @@ def run(cfg):
                 if yolo is not None:
                     r = yolo.predict(f, imgsz=cfg.get("imgsz", 640),
                                      device=dev, verbose=False, **pk)[0]
+                    if not verified:
+                        verified = check_effective(yolo, prec_rec)
+                        out["config"]["effective_precision"] = prec_rec["effective"]
+                        if not verified:
+                            out["status"] = S.FAILED
+                            out["errors"].append(
+                                f"precision fail-closed: requested {prec_rec['requested']}, "
+                                f"effective {prec_rec['effective']}")
+                            break
                     boxes = []
                     if r.boxes is not None:
                         for b in r.boxes.xywh.cpu().numpy():

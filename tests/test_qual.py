@@ -27,7 +27,9 @@ def test_paced_source_emits_and_tags_synthetic():
     got = [src.get(timeout=3.0) for _ in range(3)]
     src.stop()
     assert all(g not in (None, "retry") for g in got)
-    assert src.emitted >= 3 and not src.real_pixels
+    assert src.acct.generated >= 3 and not src.real_pixels
+    ok, books = src.acct.check_conservation()
+    assert ok, books
 
 def test_pipeline_partial_without_model():
     import nexus_bench.pipeline_bench as p

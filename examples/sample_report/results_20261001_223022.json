@@ -1,0 +1,885 @@
+{
+  "_profile": {
+    "os": "Darwin 27.0.0 (arm64)",
+    "kernel": "Darwin Kernel Version 27.0.0: Tue Aug 11 21:06:40 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T6050",
+    "python": "3.14.7",
+    "cpu": {
+      "brand": "Apple M5 Pro",
+      "physical_cores": 15,
+      "logical_cores": 15,
+      "freq_mhz": "unavailable"
+    },
+    "memory": {
+      "ram_total_gb": 25.77,
+      "swap_total_gb": 0.0
+    },
+    "storage": {
+      "total_gb": 994.6,
+      "free_gb": 689.3
+    },
+    "gpu": {
+      "vendor": "unavailable (no nvidia-smi)",
+      "note": "non-NVIDIA or driverless host \u2014 GPU fields unavailable, not zero"
+    },
+    "accelerators": {
+      "torch": "2.14.1",
+      "cuda_available": false,
+      "cuda_runtime": "unavailable",
+      "cudnn": "unavailable",
+      "tensorrt": "missing",
+      "mps_available": true
+    },
+    "packages": {
+      "ultralytics": "8.4.171",
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "matplotlib": "3.11.2",
+      "yaml": "6.0.3",
+      "opencv": "5.0.0"
+    }
+  },
+  "_config": {
+    "seed": 0,
+    "warmup": 1,
+    "repeats": 3,
+    "duration_s": 8,
+    "device": "auto",
+    "imgsz": 320,
+    "batch": 1,
+    "precision": "fp32",
+    "model": "/Users/jay/Documents/Projects/Python/yolov11-project/yolo11n.pt",
+    "reid_model": "",
+    "video": "/Users/jay/Documents/Projects/Python/yolov11-project/input_video.mp4",
+    "uav_video": "",
+    "rover_video": "",
+    "image_dir": "",
+    "imgsz_list": null,
+    "batch_list": null,
+    "agent_frames": 60,
+    "target_fps": 15.0,
+    "target_fps_list": null,
+    "integrated_mode": "realtime",
+    "val_data": "",
+    "blas_threads": null,
+    "worker_timeout_s": null,
+    "runs": 1,
+    "sustained_duration_s": 600,
+    "sustained_window_s": 60,
+    "concurrency": "separate-contexts",
+    "leak_threshold_mb": 300,
+    "throttle_temp_c": 83,
+    "req_fps": 15,
+    "out": "/tmp/yb_sample",
+    "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7"
+  },
+  "_provenance": {
+    "benchmark": "nexus-benchmarking",
+    "benchmark_version": "0.4.0",
+    "git": {
+      "sha": "7ecc93d2c2f35ef100b55c7d32b8f06633055046",
+      "dirty": true,
+      "root": "/Users/jay/Documents/Projects/nexus-benchmarking"
+    },
+    "source_state": "UNRELEASED / DIRTY SOURCE \u2014 results not reproducible from commit alone",
+    "timestamp_utc": "2026-10-01T22:29:58Z",
+    "python": "3.14.7",
+    "platform": "Darwin 27.0.0 (arm64)",
+    "packages": {
+      "torch": "2.14.1",
+      "ultralytics": "8.4.171",
+      "opencv": "5.0.0",
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "tensorrt": "missing",
+      "onnxruntime": "missing"
+    },
+    "fingerprints": {
+      "model": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+      "reid_model": "none",
+      "video": "7ff24a751ecd85a55611e85234a4afe022d5aad6e83378fb875f12a5b270c75d",
+      "uav_video": "none",
+      "rover_video": "none",
+      "image_dir": "none",
+      "val_data": "none"
+    },
+    "model_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+    "config_sha256": "aeb023cf0c5a01ed7c748433ec20a62977204b6f3e7c17839f4c5f5915edd739",
+    "gate_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
+    "power": {
+      "ac": true,
+      "battery_pct": 90
+    }
+  },
+  "_power": {
+    "coverage": {
+      "measured_signals": [
+        "ac_connected",
+        "battery_pct",
+        "battery_state",
+        "performance_mode"
+      ],
+      "power_qualified": false,
+      "note": "power is QUALIFIED only when every gate-required power signal is measured; GPU-only power never qualifies whole-system power"
+    },
+    "signals": {
+      "ac_connected": {
+        "value": true,
+        "how": "measured"
+      },
+      "battery_pct": {
+        "value": 90,
+        "how": "measured"
+      },
+      "battery_state": {
+        "value": "on AC",
+        "how": "measured"
+      },
+      "gpu_power_w": {
+        "value": null,
+        "how": "unavailable"
+      },
+      "gpu_power_limit_w": {
+        "value": null,
+        "how": "unavailable"
+      },
+      "cpu_power_w": {
+        "value": null,
+        "how": "unavailable (no portable CPU-power sensor probed)"
+      },
+      "system_power_w": {
+        "value": null,
+        "how": "unavailable (no system power sensor probed)"
+      },
+      "performance_mode": {
+        "value": "unknown (macOS lowpowermode not probed)",
+        "how": "measured"
+      }
+    }
+  },
+  "pipeline": {
+    "module": "pipeline",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 8,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "/Users/jay/Documents/Projects/Python/yolov11-project/yolo11n.pt",
+      "reid_model": "",
+      "video": "/Users/jay/Documents/Projects/Python/yolov11-project/input_video.mp4",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "sustained_duration_s": 600,
+      "sustained_window_s": 60,
+      "concurrency": "separate-contexts",
+      "leak_threshold_mb": 300,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_sample",
+      "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
+      "resolved_device": "mps",
+      "deadline_ms": 66.67,
+      "drop_definition": "drop_pct = 100*(generated-delivered)/generated",
+      "detector": "yolo (fp32)",
+      "embedder": "reid_reference_embedder (lightweight CNN, NOT production Re-ID)",
+      "source": "/Users/jay/Documents/Projects/Python/yolov11-project/input_video.mp4",
+      "source_kind": "video",
+      "effective_precision": "fp32"
+    },
+    "tests": {
+      "end_to_end_ms": {
+        "n": 118,
+        "mean_ms": 51.460672233064294,
+        "median_ms": 16.244888305664062,
+        "p95_ms": 367.63728857040354,
+        "p99_ms": 643.6761665344237,
+        "stdev_ms": 129.5481184996978,
+        "throughput_ips": 19.432315137101615,
+        "accounting": {
+          "generated": 121,
+          "acquired": 121,
+          "enqueued": 119,
+          "dequeued": 118,
+          "processed": 118,
+          "delivered": 118,
+          "producer_drops": 2,
+          "queue_drops": 0,
+          "processing_failures": 0,
+          "unfinished": 1
+        },
+        "conservation_ok": true,
+        "input_fps": 15.0,
+        "throughput_fps": 14.63,
+        "drop_pct": 2.48,
+        "deadline_miss_pct": 7.63,
+        "stage_means_ms": {
+          "resize": 0.491,
+          "detect": 19.332,
+          "embed": 1.39,
+          "associate": 0.108,
+          "telemetry": 0.016
+        },
+        "acquire_mean_ms": 1.669,
+        "queue_wait_mean_ms": 30.11,
+        "processing_mean_ms": 21.34
+      }
+    },
+    "errors": [],
+    "status": "FULL",
+    "telemetry": {
+      "n": 16,
+      "cpu_pct": {
+        "mean": 7.94,
+        "max": 13.0
+      },
+      "ram_pct": {
+        "mean": 66.31,
+        "max": 66.5
+      },
+      "proc_rss_mb": {
+        "mean": 751.14,
+        "max": 795.9
+      }
+    },
+    "controller_telemetry": {
+      "n": 18,
+      "cpu_pct": {
+        "mean": 9.28,
+        "max": 12.9
+      },
+      "ram_pct": {
+        "mean": 66.2,
+        "max": 66.5
+      },
+      "proc_rss_mb": {
+        "mean": 310.9,
+        "max": 310.9
+      }
+    }
+  },
+  "thermal": {
+    "module": "thermal",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 8,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "/Users/jay/Documents/Projects/Python/yolov11-project/yolo11n.pt",
+      "reid_model": "",
+      "video": "/Users/jay/Documents/Projects/Python/yolov11-project/input_video.mp4",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "sustained_duration_s": 600,
+      "sustained_window_s": 60,
+      "concurrency": "separate-contexts",
+      "leak_threshold_mb": 300,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_sample",
+      "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
+      "resolved_device": "mps",
+      "sustained_s": 8,
+      "window_s": 5.0,
+      "load": "yolo (/Users/jay/Documents/Projects/Python/yolov11-project/yolo11n.pt @ fp32)"
+    },
+    "tests": {
+      "windows_ips": [
+        177.3
+      ],
+      "steady": {
+        "burst_ips": 177.3,
+        "steady_median_ips": 177.3,
+        "min_window_ips": 177.3,
+        "final_window_ips": 177.3,
+        "burst_steady_ratio": 1.0,
+        "degradation_pct": 0.0
+      },
+      "window_telemetry": [
+        {
+          "gpu_temp_c": null,
+          "gpu_clock_mhz": null,
+          "gpu_power_w": null,
+          "gpu_util_pct": null,
+          "cpu_temp_c": null
+        }
+      ],
+      "sustained": {
+        "seconds": 8.0,
+        "iters": 1423,
+        "avg_ips": 177.79
+      },
+      "throttling": "none_detected",
+      "throttling_evidence": "no windowed degradation"
+    },
+    "errors": [],
+    "status": "FULL",
+    "telemetry": {
+      "n": 8,
+      "cpu_pct": {
+        "mean": 9.95,
+        "max": 11.7
+      },
+      "ram_pct": {
+        "mean": 65.95,
+        "max": 66.2
+      },
+      "proc_rss_mb": {
+        "mean": 579.89,
+        "max": 580.0
+      }
+    },
+    "controller_telemetry": {
+      "n": 19,
+      "cpu_pct": {
+        "mean": 10.87,
+        "max": 13.3
+      },
+      "ram_pct": {
+        "mean": 65.82,
+        "max": 66.0
+      },
+      "proc_rss_mb": {
+        "mean": 310.96,
+        "max": 311.0
+      }
+    }
+  },
+  "memory": {
+    "module": "memory",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 8,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "/Users/jay/Documents/Projects/Python/yolov11-project/yolo11n.pt",
+      "reid_model": "",
+      "video": "/Users/jay/Documents/Projects/Python/yolov11-project/input_video.mp4",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "sustained_duration_s": 600,
+      "sustained_window_s": 60,
+      "concurrency": "separate-contexts",
+      "leak_threshold_mb": 300,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_sample",
+      "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
+      "resolved_device": "mps"
+    },
+    "tests": {
+      "ram_alloc_touch_16mb_gbps": 4.38,
+      "ram_alloc_touch_64mb_gbps": 23.66,
+      "ram_alloc_touch_256mb_gbps": 23.26,
+      "ram_total_gb": 25.77,
+      "vram_note": "VRAM ladder probed on CUDA only",
+      "proc_peak_rss_mb": 225.0
+    },
+    "errors": [
+      "worker: no valid status established (got None) -> FAILED"
+    ],
+    "telemetry": {
+      "n": 1,
+      "cpu_pct": {
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "ram_pct": {
+        "mean": 65.3,
+        "max": 65.3
+      },
+      "proc_rss_mb": {
+        "mean": 225.0,
+        "max": 225.0
+      }
+    },
+    "status": "FAILED",
+    "controller_telemetry": {
+      "n": 3,
+      "cpu_pct": {
+        "mean": 9.1,
+        "max": 16.3
+      },
+      "ram_pct": {
+        "mean": 65.7,
+        "max": 66.2
+      },
+      "proc_rss_mb": {
+        "mean": 310.97,
+        "max": 311.0
+      }
+    }
+  },
+  "comms": {
+    "module": "comms",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 8,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "/Users/jay/Documents/Projects/Python/yolov11-project/yolo11n.pt",
+      "reid_model": "",
+      "video": "/Users/jay/Documents/Projects/Python/yolov11-project/input_video.mp4",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "sustained_duration_s": 600,
+      "sustained_window_s": 60,
+      "concurrency": "separate-contexts",
+      "leak_threshold_mb": 300,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_sample",
+      "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7"
+    },
+    "tests": {
+      "mavlink_serialize": {
+        "msgs": 500,
+        "total_ms": 3.0,
+        "kmsgs_per_s": 166.51,
+        "bytes_per_msg": 21
+      },
+      "mavlink_parse_crc": {
+        "msgs": 500,
+        "total_ms": 2.84,
+        "kmsgs_per_s": 176.0,
+        "corruption_rejected": true
+      },
+      "loopback_udp_rtt_ms": {
+        "n": 500,
+        "mean_ms": 0.9691868038498797,
+        "median_ms": 0.4101250087842345,
+        "p95_ms": 2.0631128470995437,
+        "p99_ms": 7.915477749775163,
+        "stdev_ms": 3.503459158020852,
+        "throughput_ips": 1031.792835011498,
+        "unit": "ms RTT, UDP loopback (stack cost, not link latency)",
+        "lost": 0
+      },
+      "telemetry_process_ms": {
+        "n": 500,
+        "mean_ms": 0.001509481924585998,
+        "median_ms": 0.0014170072972774506,
+        "p95_ms": 0.0017090060282498598,
+        "p99_ms": 0.0021678427583537987,
+        "stdev_ms": 0.0005089007419300133,
+        "throughput_ips": 662478.9497060507
+      },
+      "sim_link_model_ms": {
+        "n": 500,
+        "mean_ms": 13.318720114270977,
+        "median_ms": 10.855195863133412,
+        "p95_ms": 28.66025759886783,
+        "p99_ms": 40.54264842405351,
+        "stdev_ms": 8.046632191812947,
+        "throughput_ips": 75.08228954586276,
+        "unit": "ms SIMULATED (model only \u2014 not a measurement)"
+      },
+      "ros2": "unavailable (rclpy not installed)"
+    },
+    "errors": [
+      "worker: no valid status established (got None) -> FAILED"
+    ],
+    "telemetry": {
+      "n": 5,
+      "cpu_pct": {
+        "mean": 6.5,
+        "max": 10.8
+      },
+      "ram_pct": {
+        "mean": 65.08,
+        "max": 65.2
+      },
+      "proc_rss_mb": {
+        "mean": 177.78,
+        "max": 216.6
+      }
+    },
+    "status": "FAILED",
+    "controller_telemetry": {
+      "n": 7,
+      "cpu_pct": {
+        "mean": 7.43,
+        "max": 14.3
+      },
+      "ram_pct": {
+        "mean": 65.11,
+        "max": 65.2
+      },
+      "proc_rss_mb": {
+        "mean": 311.0,
+        "max": 311.0
+      }
+    }
+  },
+  "_gate": {
+    "verdict": "FAIL",
+    "req_fps": 15,
+    "checks": [
+      {
+        "check": "uav.evidence_full",
+        "pass": true,
+        "detail": "pipeline status=FULL",
+        "kind": "missing"
+      },
+      {
+        "check": "uav.fps>=15",
+        "pass": false,
+        "detail": "14.63 fps",
+        "kind": "measured"
+      },
+      {
+        "check": "uav.p95_ms<=66.7",
+        "pass": false,
+        "detail": "367.63728857040354ms",
+        "kind": "measured"
+      },
+      {
+        "check": "uav.p99_ms<=120.0",
+        "pass": false,
+        "detail": "643.6761665344237ms",
+        "kind": "measured"
+      },
+      {
+        "check": "uav.deadline_miss_pct<=5.0",
+        "pass": false,
+        "detail": "7.63%",
+        "kind": "measured"
+      },
+      {
+        "check": "uav.drop_pct<=5.0",
+        "pass": true,
+        "detail": "2.48%",
+        "kind": "measured"
+      },
+      {
+        "check": "rover.evidence_full",
+        "pass": true,
+        "detail": "pipeline status=FULL",
+        "kind": "missing"
+      },
+      {
+        "check": "rover.fps>=15",
+        "pass": false,
+        "detail": "14.63 fps",
+        "kind": "measured"
+      },
+      {
+        "check": "rover.p95_ms<=66.7",
+        "pass": false,
+        "detail": "367.63728857040354ms",
+        "kind": "measured"
+      },
+      {
+        "check": "rover.p99_ms<=120.0",
+        "pass": false,
+        "detail": "643.6761665344237ms",
+        "kind": "measured"
+      },
+      {
+        "check": "rover.deadline_miss_pct<=5.0",
+        "pass": false,
+        "detail": "7.63%",
+        "kind": "measured"
+      },
+      {
+        "check": "rover.drop_pct<=5.0",
+        "pass": true,
+        "detail": "2.48%",
+        "kind": "measured"
+      },
+      {
+        "check": "dual.evidence_full",
+        "pass": false,
+        "detail": "integrated status=None",
+        "kind": "missing"
+      },
+      {
+        "check": "sustained.evidence_full",
+        "pass": false,
+        "detail": "sustained status=None (no long-run evidence)",
+        "kind": "missing"
+      },
+      {
+        "check": "resources.vram_headroom",
+        "pass": false,
+        "detail": "memory status=FAILED, sustained status=None (no VRAM evidence)",
+        "kind": "missing"
+      },
+      {
+        "check": "resources.no_throttle",
+        "pass": true,
+        "detail": "thermal=none_detected",
+        "kind": "measured"
+      },
+      {
+        "check": "resources.no_oom",
+        "pass": true,
+        "detail": "clean",
+        "kind": "measured"
+      },
+      {
+        "check": "provenance.tree",
+        "pass": true,
+        "detail": "UNRELEASED / DIRTY SOURCE",
+        "kind": "measured"
+      },
+      {
+        "check": "accuracy.measured",
+        "pass": false,
+        "detail": "no candidate-vs-baseline mAP comparison (INCONCLUSIVE, not pass)",
+        "kind": "missing"
+      }
+    ],
+    "states": {
+      "FULL": 2,
+      "FAILED": 2
+    }
+  },
+  "_meta": {
+    "timestamp_utc": "20261001_223022",
+    "req_fps": 15,
+    "feasibility": {
+      "pipeline": "limited",
+      "thermal": "ok",
+      "memory": "limited",
+      "comms": "limited"
+    },
+    "feasibility_reasons": {
+      "pipeline": [
+        "end_to_end_ms: p95 367.6ms > deadline 66.7ms",
+        "deadline-miss 7.63% / drops 2.48%",
+        "measured 14.63 FPS vs required 15 FPS"
+      ],
+      "thermal": [
+        "p95 within 66.7ms deadline; misses/drops <5%"
+      ],
+      "memory": [
+        "1 non-fatal error(s); see log"
+      ],
+      "comms": [
+        "1 non-fatal error(s); see log"
+      ]
+    },
+    "gate": {
+      "verdict": "FAIL",
+      "req_fps": 15,
+      "checks": [
+        {
+          "check": "uav.evidence_full",
+          "pass": true,
+          "detail": "pipeline status=FULL",
+          "kind": "missing"
+        },
+        {
+          "check": "uav.fps>=15",
+          "pass": false,
+          "detail": "14.63 fps",
+          "kind": "measured"
+        },
+        {
+          "check": "uav.p95_ms<=66.7",
+          "pass": false,
+          "detail": "367.63728857040354ms",
+          "kind": "measured"
+        },
+        {
+          "check": "uav.p99_ms<=120.0",
+          "pass": false,
+          "detail": "643.6761665344237ms",
+          "kind": "measured"
+        },
+        {
+          "check": "uav.deadline_miss_pct<=5.0",
+          "pass": false,
+          "detail": "7.63%",
+          "kind": "measured"
+        },
+        {
+          "check": "uav.drop_pct<=5.0",
+          "pass": true,
+          "detail": "2.48%",
+          "kind": "measured"
+        },
+        {
+          "check": "rover.evidence_full",
+          "pass": true,
+          "detail": "pipeline status=FULL",
+          "kind": "missing"
+        },
+        {
+          "check": "rover.fps>=15",
+          "pass": false,
+          "detail": "14.63 fps",
+          "kind": "measured"
+        },
+        {
+          "check": "rover.p95_ms<=66.7",
+          "pass": false,
+          "detail": "367.63728857040354ms",
+          "kind": "measured"
+        },
+        {
+          "check": "rover.p99_ms<=120.0",
+          "pass": false,
+          "detail": "643.6761665344237ms",
+          "kind": "measured"
+        },
+        {
+          "check": "rover.deadline_miss_pct<=5.0",
+          "pass": false,
+          "detail": "7.63%",
+          "kind": "measured"
+        },
+        {
+          "check": "rover.drop_pct<=5.0",
+          "pass": true,
+          "detail": "2.48%",
+          "kind": "measured"
+        },
+        {
+          "check": "dual.evidence_full",
+          "pass": false,
+          "detail": "integrated status=None",
+          "kind": "missing"
+        },
+        {
+          "check": "sustained.evidence_full",
+          "pass": false,
+          "detail": "sustained status=None (no long-run evidence)",
+          "kind": "missing"
+        },
+        {
+          "check": "resources.vram_headroom",
+          "pass": false,
+          "detail": "memory status=FAILED, sustained status=None (no VRAM evidence)",
+          "kind": "missing"
+        },
+        {
+          "check": "resources.no_throttle",
+          "pass": true,
+          "detail": "thermal=none_detected",
+          "kind": "measured"
+        },
+        {
+          "check": "resources.no_oom",
+          "pass": true,
+          "detail": "clean",
+          "kind": "measured"
+        },
+        {
+          "check": "provenance.tree",
+          "pass": true,
+          "detail": "UNRELEASED / DIRTY SOURCE",
+          "kind": "measured"
+        },
+        {
+          "check": "accuracy.measured",
+          "pass": false,
+          "detail": "no candidate-vs-baseline mAP comparison (INCONCLUSIVE, not pass)",
+          "kind": "missing"
+        }
+      ],
+      "states": {
+        "FULL": 2,
+        "FAILED": 2
+      }
+    },
+    "provenance": {
+      "benchmark": "nexus-benchmarking",
+      "benchmark_version": "0.4.0",
+      "git": {
+        "sha": "7ecc93d2c2f35ef100b55c7d32b8f06633055046",
+        "dirty": true,
+        "root": "/Users/jay/Documents/Projects/nexus-benchmarking"
+      },
+      "source_state": "UNRELEASED / DIRTY SOURCE \u2014 results not reproducible from commit alone",
+      "timestamp_utc": "2026-10-01T22:29:58Z",
+      "python": "3.14.7",
+      "platform": "Darwin 27.0.0 (arm64)",
+      "packages": {
+        "torch": "2.14.1",
+        "ultralytics": "8.4.171",
+        "opencv": "5.0.0",
+        "numpy": "2.5.3",
+        "pandas": "3.0.6",
+        "tensorrt": "missing",
+        "onnxruntime": "missing"
+      },
+      "fingerprints": {
+        "model": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+        "reid_model": "none",
+        "video": "7ff24a751ecd85a55611e85234a4afe022d5aad6e83378fb875f12a5b270c75d",
+        "uav_video": "none",
+        "rover_video": "none",
+        "image_dir": "none",
+        "val_data": "none"
+      },
+      "model_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+      "config_sha256": "aeb023cf0c5a01ed7c748433ec20a62977204b6f3e7c17839f4c5f5915edd739",
+      "gate_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
+      "power": {
+        "ac": true,
+        "battery_pct": 90
+      }
+    },
+    "method": "tail-latency + deadline-miss + drop-rate + measured throughput vs required FPS; medians never decide alone"
+  }
+}
