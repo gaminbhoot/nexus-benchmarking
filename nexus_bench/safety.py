@@ -21,10 +21,11 @@ class Guard:
         if time.time() - self._t0 > self.limits.max_duration_s:
             self.reason = "max_duration exceeded"
             return False
-        temp = t.get("cpu_temp_c") or t.get("gpu_temp_c")
-        if temp and temp >= self.limits.max_temp_c:
-            self.reason = f"sustained high temp {temp:.1f}C"
-            return False
+        for key in ("cpu_temp_c", "gpu_temp_c"):  # each sensor independently
+            v = t.get(key)
+            if v is not None and v >= self.limits.max_temp_c:
+                self.reason = f"{key} {v:.1f}C over limit"
+                return False
         if (t.get("ram_pct") or 0) >= self.limits.max_ram_pct:
             self.reason = f"RAM {t.get('ram_pct'):.0f}% over limit"
             return False

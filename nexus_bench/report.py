@@ -29,13 +29,18 @@ def _deadline_ms(res, req_fps):
 
 def _assess(mod, res, req_fps):
     """Returns (verdict, [reasons]). Only measured numbers count."""
+    from nexus_bench import statuses as S
     reasons = []
     errs = " ".join(res.get("errors", [])).lower()
     if any(k in errs for k in _OOM_WORDS):
         return "exceeds limits", ["out-of-memory during measurement"]
-    if res.get("status") == "unsupported_no_weights" or (
+    if res.get("status") in (S.UNSUPPORTED, S.NOT_RUN) or (
             res.get("errors") and not res.get("tests")):
-        return "unsupported", ["no real workload executed on this host"]
+        return "unsupported", [f"status={res.get('status')}: no real workload executed"]
+    if res.get("status") in (S.PARTIAL, S.FALLBACK):
+        part = [f"status={res.get('status')}: partial evidence only (not gate-grade)"]
+    else:
+        part = []
     tests = res.get("tests") or {}
     deadline = _deadline_ms(res, req_fps)
     worst_miss, worst_drop, fps_vals, tail_slow, med_slow = 0, 0, [], False, False
@@ -60,14 +65,14 @@ def _assess(mod, res, req_fps):
         return "exceeds limits", [f"deadline-miss {worst_miss}% / drops {worst_drop}% — cannot hold {req_fps} FPS"]
     if fps_vals and max(fps_vals) < req_fps / 2:
         return "exceeds limits", [f"measured {max(fps_vals)} FPS vs required {req_fps} FPS"]
-    limited_reasons = list(reasons)
+    limited_reasons = list(reasons) + part
     if 5 <= worst_miss <= 20 or 5 <= worst_drop <= 20:
         limited_reasons.append(f"deadline-miss {worst_miss}% / drops {worst_drop}%")
     if fps_vals and max(fps_vals) < req_fps:
         limited_reasons.append(f"measured {max(fps_vals)} FPS vs required {req_fps} FPS")
     if res.get("errors"):
         limited_reasons.append(f"{len(res['errors'])} non-fatal error(s); see log")
-    if tail_slow or med_slow or limited_reasons:
+    if tail_slow or med_slow or limited_reasons or part:
         if not limited_reasons and med_slow:
             limited_reasons.append("median latency exceeds deadline")
         return "limited", limited_reasons or ["tail latency exceeds deadline"]
@@ -110,6 +115,8 @@ def write_all(results, outdir, req_fps=15):
     verdicts, reasons = feasibility(results, req_fps)
     results["_meta"] = {"timestamp_utc": stamp, "req_fps": req_fps,
                         "feasibility": verdicts, "feasibility_reasons": reasons,
+                        "gate": results.get("_gate", {"verdict": "not-evaluated"}),
+                        "provenance": results.get("_provenance", {}),
                         "method": ("tail-latency + deadline-miss + drop-rate + measured "
                                    "throughput vs required FPS; medians never decide alone")}
     jp = out / f"results_{stamp}.json"
@@ -155,6 +162,11 @@ def _chart(rows):
 def _html(results, rows, stamp):
     feas = results["_meta"]["feasibility"]
     why = results["_meta"]["feasibility_reasons"]
+    gate = results["_meta"].get("gate", {})
+    prov = results["_meta"].get("provenance", {})
+    gate_rows = "".join(
+        f"<tr><td>{c['check']}</td><td>{'PASS' if c['pass'] else 'FAIL'}</td>"
+        f"<td>{c['detail']}</td></tr>" for c in gate.get("checks", [])) or "<tr><td colspan=3>no gate evaluated</td></tr>"
     feas_rows = "".join(
         f"<tr><td>{m}</td><td>{v}</td><td>{STATUSES.get(v, v)}</td>"
         f"<td>{'; '.join(why.get(m, []))}</td></tr>" for m, v in feas.items())
@@ -165,10 +177,17 @@ def _html(results, rows, stamp):
                   f"<td>{r.get('deadline_miss_pct', '')}</td><td>{r.get('drop_pct', '')}</td>"
                   f"<td>{r.get('error', r.get('value', ''))}</td></tr>" for r in rows)
     prof = results.get("_profile", {})
+    gate_verdict = gate.get("verdict", "not-evaluated")
+    states = json.dumps(gate.get("states", {}), default=str)
+    prov_json = json.dumps(prov, indent=2, default=str)[:2500]
     return f"""<html><head><title>NEXUS benchmark {stamp}</title>
 <style>body{{font-family:sans-serif;max-width:1100px;margin:auto;padding:20px}}
 table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding:4px 8px;font-size:13px}}</style>
 </head><body><h1>NEXUS Benchmark Report — {stamp} UTC</h1>
+<h2>Purchase gate: {gate_verdict}</h2>
+<table><tr><th>Check</th><th>Result</th><th>Detail</th></tr>{gate_rows}</table>
+<p>Only modules with status FULL count toward the gate. States: {states}</p>
+<h2>Provenance</h2><pre>{prov_json}</pre>
 <h2>Platform</h2><pre>{json.dumps(prof, indent=2, default=str)[:3000]}</pre>
 <h2>Feasibility (required: {results['_meta']['req_fps']} FPS; p95 + misses decide)</h2>
 <table><tr><th>Module</th><th>Verdict</th><th>Meaning</th><th>Why</th></tr>{feas_rows}</table>

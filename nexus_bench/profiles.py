@@ -18,7 +18,14 @@ BASE = {
     "image_dir": "",
     "imgsz_list": None,      # optional sweep, e.g. [320, 480, 640]
     "batch_list": None,      # optional sweep, e.g. [1, 2, 4]
-    "agent_frames": 60,      # frames per agent in integrated runs
+    "agent_frames": 60,      # frames per agent in throughput-mode runs
+    "target_fps": 15.0,      # paced input rate for realtime pipeline/integrated/matrix
+    "target_fps_list": None, # matrix sweep, e.g. [15, 30]
+    "integrated_mode": "realtime",  # realtime | throughput
+    "val_data": "",          # YOLO data yaml for accuracy mAP (optional)
+    "blas_threads": None,    # pin worker BLAS threads (None = inherit)
+    "worker_timeout_s": None,# supervisor kill timeout per module (None = auto)
+    "runs": 1,               # independent repetitions (variance)
     "throttle_temp_c": 83,   # evidence threshold for the thermal verdict
     "req_fps": 15,
     "out": "reports",

@@ -11,8 +11,8 @@ from nexus_bench.tracking_bench import Tracker, _greedy_match, make_scenario
 def test_yaml_profile_loads_and_cli_wins(tmp_path):
     p = tmp_path / "q.yaml"
     p.write_text("profile_base: smoke\nimgsz: 416\nmodules: [cpu]\n")
-    cfg, mods = _load_profile(str(p), {"imgsz": None})
-    assert cfg["imgsz"] == 416 and mods == ["cpu"]
+    cfg, mods, gate_cfg = _load_profile(str(p), {"imgsz": None})
+    assert cfg["imgsz"] == 416 and mods == ["cpu"] and gate_cfg is None
 
 def test_yaml_unknown_key_rejected(tmp_path):
     p = tmp_path / "bad.yaml"

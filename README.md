@@ -1,69 +1,79 @@
 # NEXUS Benchmarking
 
-Hardware-aware benchmarking utility for the NEXUS autonomous air–ground robotic system.
-Establishes realistic local compute capacity, finds bottlenecks, and reports which
-NEXUS workloads fit the machine — measured numbers only, no hardcoded hardware claims.
+Hardware-qualification system for the NEXUS autonomous air–ground robotic system.
+Answers one question: **given this exact machine, can the exact NEXUS workload run
+continuously within latency, accuracy, memory, thermal, and power margins?** —
+and refuses to pass when critical evidence is missing.
 
 ## Quick start
 
 ```bash
 pip install -e ".[dev]"
 nexus-bench --profile smoke                       # validate everything in seconds
-nexus-bench --profile profiles/rtx3050_uav.yaml --model yolo11n.pt
-nexus-bench inference memory --profile profiles/rtx3050_4gb.yaml --model nexus_best.pt \
-  --precision fp16                                # VRAM boundary sweep on the 3050
-nexus-bench pipeline --video drone.mp4 --model yolo11n.pt --req-fps 15
-nexus-bench --list-profiles
+nexus-bench --profile profiles/purchase_gate.yaml --model nexus.pt \
+  --video feed.mp4 --gate-strict                  # the purchase gate (exit 3 unless PASS)
+nexus-bench matrix --profile profiles/rtx3050_4gb.yaml --model nexus.pt
 ```
 
-`--profile` takes a builtin name (`smoke uav rover uav_rover_concurrent tracking
-reid_tracking mapping comms_fusion full`) or a YAML file (`profile_base` + overrides).
-Reports land in `reports/`: JSON (automation), CSV (detail), HTML (charts + feasibility).
+`--profile` takes a builtin name or a YAML file (`profile_base` + overrides + `gate:`).
+Every module runs in a **fresh worker process** under a supervising controller
+(timeout kill → ABORTED, controller-side telemetry). Reports in `reports/`:
+JSON, CSV, HTML (gate checks + provenance + charts).
+
+## Gate, not vibe
+
+Only `FULL`-status evidence counts toward the gate. `PARTIAL` (fallback detector,
+synthetic pixels), `UNSUPPORTED`, `FAILED`, `INCONCLUSIVE`, `ABORTED`, `NOT_RUN`
+fail their checks with reasons. Missing accuracy evidence → INCONCLUSIVE, never PASS.
+See `profiles/purchase_gate.yaml` for the acceptance criteria (per-workload FPS /
+p95 / p99 / miss / drop thresholds, VRAM headroom, throttle and OOM vetoes).
 
 ## Methodology: what each number actually is
 
 | Module | Status |
 |---|---|
-| CUDA GEMM TFLOPS, bandwidth, VRAM ladder | Synthetic microbenchmark |
-| YOLO inference grid (imgsz × batch × precision) | Actual NEXUS component — requires `--model`; without weights the module reports `unsupported`, never proxy numbers |
-| Re-ID embedding (crop → CNN → gallery match) | Actual component at reference scale (lightweight CNN); pass `--reid-model` for production weights |
-| DeepSORT-style tracking (Kalman + appearance cascade, greedy assignment) | Actual component (greedy, not Hungarian — no scipy dep) |
-| UAV/rover video pipeline (decode→detect→track→telemetry) | Actual NEXUS workload on `--video`/`--image-dir`; synthetic stream otherwise (labelled) |
-| UAV + rover concurrent + fusion | **Primary NEXUS benchmark** |
-| Two-view VO (ORB→E→pose→triangulate vs ground truth) | Component benchmark with geometric verification |
-| MAVLink v2 serialize/parse + UDP loopback RTT | Real framing/stack measurement (localhost = stack cost; target the vehicle for link numbers) |
-| `sim_link_model` | Simulation — never a measurement |
+| GEMM TFLOPS, bandwidth, VRAM ladder, allocator stats | Synthetic microbenchmark |
+| YOLO grid (imgsz × batch × verified precision) | Actual component — needs `--model`; effective precision verified post-warmup, fail-closed |
+| Backend matrix (torch fp32/fp16, ONNX CUDA, TensorRT fp16/int8) | Actual component where the stack exists, else `NOT_RUN` |
+| Accuracy (fp32-vs-candidate agreement + mAP) | Preservation gate — needs `--model` (`--val-data` for mAP) |
+| Re-ID embedding / DeepSORT-style tracking (greedy) | Actual components at reference scale |
+| Video pipeline on paced streams | Actual workload on `--video` (FULL) else PARTIAL |
+| UAV + rover concurrent + fusion | **Primary benchmark** — realtime (paced, sustained) and throughput modes |
+| Two-view VO vs ground truth | Component benchmark with geometric verification |
+| MAVLink v2 framing + UDP loopback | Real stack measurement (localhost = stack cost) |
+| Cold start, decode path, thermal windows | Qualification measurements |
 
-Key rules enforced in code: `--precision fp16` casts weights AND passes `half=True`;
-batch tests pass all N images in ONE `predict` call; throttling is claimed only on
-temp + clock-drop + load evidence; feasibility uses p95 + deadline-miss % + drops +
-measured FPS vs `--req-fps` (median never decides alone). See `tests/` — including
-`test_inference.py`, which pins the no-weights honesty guarantee.
+Key guarantees (all test-pinned): no weights → `UNSUPPORTED` with zero numbers;
+requested fp16 not in effect → numbers withheld; requested model unloadable in
+thermal → `FAILED` (never a silent GEMM swap); `sim_link_model` is simulation only.
 
 ## Modules
 
-`system cpu gpu memory inference reid tracking vision pipeline mapping3d comms integrated thermal`
+`system cpu gpu memory inference backends accuracy reid tracking vision pipeline
+matrix mapping3d comms integrated thermal coldstart decode`
 
-## Known limitations
+## Known limitations (roadmap, not silence)
 
-- No scipy → greedy (not Hungarian) association; swap in `linear_sum_assignment` if scipy exists.
-- No pymavlink/ROS 2 → hand-rolled MAVLink v2 framing; `rclpy` probed, not benchmarked.
-- No TensorRT path yet (probe reports presence; add an engine runner for INT8 on the 3050).
-- Reference Re-ID CNN is small by design — compare relatively, or bring your weights.
-- Laptop power-mode/firmware caps are read (power limit via nvidia-smi), never changed.
+- TensorRT/INT8 paths need the NVIDIA host (gated `NOT_RUN` here); Hungarian
+  assignment needs scipy (greedy labelled); `rclpy`/physical links probed, not run.
+- Reference Re-ID CNN is small by design (`--reid-model` for production weights).
+- Depth-model, EKF fusion, and planner benchmarks are not yet implemented —
+  the rover agent uses an occupancy-grid proxy (labelled PARTIAL-relevant).
+- Laptop power-mode/firmware caps are read, never changed.
 
 ## Safety
 
-Temp/RAM/VRAM/duration caps abort gracefully; CUDA OOMs are caught with cache
-cleanup; Ctrl-C cancels with partial results. Missing sensors are "unavailable",
-never fatal. No firmware, overclock, or voltage changes — ever.
+Independent CPU/GPU temp limits, RAM/VRAM/duration caps, supervisor timeout kills,
+CUDA OOMs caught with cleanup, Ctrl-C cancels the rest as `NOT_RUN`. Missing
+sensors are "unavailable", never fatal or zero.
 
 ## Layout
 
 ```
-nexus_bench/   profiler monitor stats safety profiles cli report + *_bench.py
-tests/         pytest suite: smoke + metrics/feasibility + units + inference honesty
-profiles/      reproducible YAML benchmark profiles
+nexus_bench/   cli (supervisor) worker stream gate statuses provenance
+               profiler monitor stats safety profiles report yolo_util + *_bench.py
+tests/         57 tests: smoke + metrics + gate + units + inference + qual
+profiles/      purchase_gate.yaml, rtx3050_4gb.yaml, rtx3050_uav.yaml, full_stack.yaml
 reports/       generated artifacts (git-ignored)
 examples/sample_report/  committed example output
 ```

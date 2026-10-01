@@ -38,6 +38,12 @@ def run(cfg):
                 torch.cuda.reset_peak_memory_stats()
                 total_mb = torch.cuda.get_device_properties(0).total_memory / 1e6
                 out["tests"]["vram_total_mb"] = round(total_mb, 1)
+                try:  # driver truth, independent of the PyTorch allocator
+                    free_b, total_b = torch.cuda.mem_get_info()
+                    out["tests"]["driver_free_mb"] = round(free_b / 1e6, 1)
+                    out["tests"]["driver_used_mb"] = round((total_b - free_b) / 1e6, 1)
+                except Exception as e:
+                    out["errors"].append(f"mem_get_info: {e}")
                 steps, held, oom_at = [], [], None
                 for mb in LADDER_MB:
                     if mb > total_mb * 0.95:
@@ -67,21 +73,37 @@ def run(cfg):
                 out["tests"]["vram_peak_alloc_mb"] = round(peak_alloc, 1)
                 out["tests"]["vram_peak_reserved_mb"] = round(peak_res, 1)
                 out["tests"]["vram_fragmentation_gap_mb"] = round(peak_res - peak_alloc, 1)
+                try:
+                    st = torch.cuda.memory_stats()
+                    out["tests"]["allocator"] = {
+                        "allocated_mb": round(st.get("allocated_bytes.all.current", 0) / 1e6, 1),
+                        "reserved_mb": round(st.get("reserved_bytes.all.current", 0) / 1e6, 1),
+                        "active_blocks": st.get("active_bytes.all.current", "n/a"),
+                        "note": "allocated=tensor memory, reserved=allocator cache (incl. fragmentation)"}
+                except Exception as e:
+                    out["errors"].append(f"memory_stats: {e}")
                 mp = (cfg.get("model") or "").strip()
                 if mp and os.path.exists(mp):
                     try:
                         torch.cuda.reset_peak_memory_stats()
-                        base = torch.cuda.memory_allocated() / 1e6
+                        torch.cuda.empty_cache()
+                        free_before = torch.cuda.mem_get_info()[0] / 1e6
+                        base_alloc = torch.cuda.memory_allocated() / 1e6
                         from ultralytics import YOLO
                         y = YOLO(mp)
                         _ = y.predict(np.zeros((640, 640, 3), np.uint8),
                                       imgsz=cfg.get("imgsz", 640), device="cuda", verbose=False)
-                        used = torch.cuda.memory_allocated() / 1e6
-                        out["tests"]["yolo_footprint_mb"] = round(used - base, 1)
-                        out["tests"]["vram_remaining_mb"] = round(total_mb - used, 1)
-                        out["tests"]["yolo_peak_mb"] = round(torch.cuda.max_memory_allocated() / 1e6, 1)
+                        peak = torch.cuda.max_memory_allocated() / 1e6
                         del y
                         torch.cuda.empty_cache()
+                        free_after = torch.cuda.mem_get_info()[0] / 1e6
+                        out["tests"]["model_memory_protocol_mb"] = {
+                            "free_before": round(free_before, 1),
+                            "peak_during_inference": round(peak, 1),
+                            # working set above the pre-existing baseline, not total-minus-current
+                            "model_working_set": round(peak - base_alloc, 1),
+                            "free_after": round(free_after, 1),
+                            "safe_headroom": round(free_after, 1)}
                     except RuntimeError as e:
                         out["errors"].append(f"model footprint OOM — model does not fit: {str(e)[:200]}")
                         torch.cuda.empty_cache()

@@ -1,91 +1,61 @@
-"""End-to-end NEXUS perception pipeline on a REAL frame stream.
+"""End-to-end NEXUS perception pipeline on a paced frame stream.
 
-Chain: source read -> decode -> resize -> detection -> embedding -> association
--> telemetry encode -> output. Reports throughput FPS, end-to-end latency
-(median/p95/p99), deadline-miss % at --req-fps, and dropped frames under a
-real-time consumption model (a slow stage drops later frames, like production).
+Chain: paced acquisition (own thread, own latency) -> queue wait -> resize ->
+detection -> embedding -> association -> telemetry encode -> output.
+Reports input FPS vs processed FPS, e2e latency (capture->output, median/p95/p99),
+deadline-miss %, drops, per-stage means.
 
-Sources: --video FILE, --image-dir DIR, or seeded synthetic stream (labelled).
+Status: FULL only when detector is real YOLO at the verified requested precision
+AND pixels are real (video/dir). Anything else is PARTIAL (never gate-eligible).
 """
-import os
 import time
 import numpy as np
 
+from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.profiles import resolve_device
 from nexus_bench.reid_embed import embed_crops, load_embedder
 from nexus_bench.stats import summarize
+from nexus_bench.stream import PacedSource
 from nexus_bench.tracking_bench import Tracker
 from nexus_bench.vision_bench import _motion_detections
-from nexus_bench.yolo_util import load_weights, precision_kwargs
-
-def _open_source(cfg):
-    import cv2
-    vp = (cfg.get("video") or "").strip()
-    dp = (cfg.get("image_dir") or "").strip()
-    if vp and os.path.exists(vp):
-        cap = cv2.VideoCapture(vp)
-        fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-        tag = f"video:{vp}@{fps:.1f}fps"
-        def gen():
-            while True:
-                ok, f = cap.read()
-                if not ok:
-                    break
-                yield cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
-            cap.release()
-        return gen(), tag, fps
-    if dp and os.path.isdir(dp):
-        files = sorted(p for p in os.listdir(dp)
-                       if p.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")))
-        tag = f"image_dir:{dp} ({len(files)} files, replayed @30fps)"
-        def gen():
-            for f in files:
-                img = cv2.imread(os.path.join(dp, f))
-                if img is not None:
-                    yield cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        return gen(), tag, 30.0
-    from nexus_bench.vision_bench import _moving_squares
-    n = max(30, cfg.get("repeats", 20) * 2)
-    frames = _moving_squares(n, seed=cfg.get("seed", 0))
-    return iter(frames), "synthetic_moving_squares (labelled; use --video for real pixels)", 30.0
+from nexus_bench.yolo_util import check_effective, load_weights, precision_kwargs
 
 def run(cfg):
     import cv2
     dev = resolve_device(cfg.get("device", "auto"))
     req_fps = cfg.get("req_fps", 15) or 15
     deadline_ms = 1000.0 / req_fps
+    target_fps = cfg.get("target_fps") or min(30.0, req_fps * 2)
     out = {"module": "pipeline",
-           "config": {**cfg, "resolved_device": dev, "deadline_ms": round(deadline_ms, 2)},
-           "tests": {}, "errors": []}
+           "config": {**cfg, "resolved_device": dev, "deadline_ms": round(deadline_ms, 2),
+                      "target_fps": target_fps},
+           "tests": {}, "errors": [], "status": S.FULL}
     with Monitor() as mon:
         try:
-            gen, tag, src_fps = _open_source(cfg)
-            out["config"]["source"] = tag
-            out["config"]["source_fps"] = round(src_fps, 1)
-            yolo, dtag = load_weights((cfg.get("model") or "").strip(),
-                                        want_fp16=(cfg.get("precision") == "fp16"))
-            pk = precision_kwargs(yolo, cfg.get("precision") == "fp16") if yolo else {}
-            # Fallback notice lives in config, not errors: everything else ran for real.
-            out["config"]["detector"] = dtag if yolo is not None else \
-                "motion_detector_fallback (pipeline cost only)"
+            want_fp16 = cfg.get("precision") == "fp16"
+            yolo, prec_rec = load_weights((cfg.get("model") or "").strip(), want_fp16=want_fp16)
+            pk = precision_kwargs(want_fp16) if yolo else {}
+            out["config"]["detector"] = prec_rec.get("error", f"yolo ({prec_rec['requested']})") \
+                if yolo is None else f"yolo ({prec_rec['requested']})"
             model, etag = load_embedder(dev, (cfg.get("reid_model") or "").strip())
             out["config"]["embedder"] = etag
+            src = PacedSource(cfg, target_fps=target_fps).start()
+            out["config"]["source"] = src.tag
             tr = Tracker()
-            e2e, by_stage = [], {"read": [], "resize": [], "detect": [],
-                                 "embed": [], "associate": [], "telemetry": []}
-            n_frames, n_drops, n_miss = 0, 0, 0
-            t_start = time.perf_counter()
-            prev_gray = None
-            for frame in gen:
-                n_frames += 1
-                pts = (n_frames - 1) * 1000.0 / src_fps
-                elapsed_ms = (time.perf_counter() - t_start) * 1000
-                if elapsed_ms - pts > deadline_ms:
-                    n_drops += 1  # real-time consumer would have moved on
+            e2e, by_stage, wait_ms = [], {"resize": [], "detect": [], "embed": [],
+                                          "associate": [], "telemetry": []}, []
+            n_out, n_miss, t_end = 0, 0, time.time() + cfg.get("duration_s", 30)
+            prev_gray, verified, frames_seen = None, False, 0
+            while time.time() < t_end:
+                item = src.get(timeout=2.0)
+                if item is None:
+                    break
+                if item == "retry":
                     continue
-                f0 = time.perf_counter()
-                by_stage["read"].append((time.perf_counter() - f0) * 1000)  # already decoded above
+                frame, capture_t, seq = item
+                frames_seen += 1
+                wait_ms.append((time.time() - capture_t) * 1000)  # queue wait at pickup
                 t0 = time.perf_counter()
                 small = cv2.resize(frame, (cfg.get("imgsz", 640) // 2 * 2, 480))
                 gray = cv2.cvtColor(small, cv2.COLOR_RGB2GRAY)
@@ -94,6 +64,16 @@ def run(cfg):
                 if yolo is not None:
                     r = yolo.predict(small, imgsz=cfg.get("imgsz", 640), device=dev,
                                      verbose=False, **pk)[0]
+                    if not verified:
+                        ok = check_effective(yolo, prec_rec)
+                        out["config"]["effective_precision"] = prec_rec["effective"]
+                        if not ok:
+                            out["status"] = S.FAILED
+                            out["errors"].append(
+                                f"precision fail-closed: requested {prec_rec['requested']}, "
+                                f"effective {prec_rec['effective']} — no fp16 numbers reported")
+                            break
+                        verified = True
                     boxes = []
                     if r.boxes is not None:
                         for b in r.boxes.xywh.cpu().numpy()[:16]:
@@ -115,25 +95,40 @@ def run(cfg):
                 live = tr.step(boxes[:8], feats)
                 by_stage["associate"].append((time.perf_counter() - t0) * 1000)
                 t0 = time.perf_counter()
-                pkt = {"n": n_frames, "tracks": [(i, [round(v, 1) for v in b]) for i, b in live]}
+                pkt = {"n": seq, "tracks": [(i, [round(v, 1) for v in b]) for i, b in live]}
                 _ = str(pkt).encode()
                 by_stage["telemetry"].append((time.perf_counter() - t0) * 1000)
-                lat = (time.perf_counter() - f0) * 1000
+                lat = (time.time() - capture_t) * 1000  # capture -> output
                 e2e.append(lat)
+                n_out += 1
                 if lat > deadline_ms:
                     n_miss += 1
-            wall_s = time.perf_counter() - t_start
-            proc = len(e2e)
+            wall_s = src.emitted / target_fps if src.emitted else 0
+            src.stop()
+            if out["status"] != S.FAILED:
+                if yolo is None:
+                    out["status"] = S.PARTIAL
+                    out["errors"].append("PARTIAL: motion fallback, YOLO not benchmarked "
+                                         "(informational only, not gate-eligible)")
+                elif not src.real_pixels:
+                    out["status"] = S.PARTIAL
+                    out["errors"].append("PARTIAL: synthetic pixels (use --video/--image-dir "
+                                         "for FULL)")
             d = summarize(e2e)
-            d["frames_total"] = n_frames
-            d["frames_processed"] = proc
-            d["frames_dropped"] = n_drops
-            d["drop_pct"] = round(100 * n_drops / n_frames, 2) if n_frames else 0
-            d["deadline_miss_pct"] = round(100 * n_miss / proc, 2) if proc else 0
-            d["throughput_fps"] = round(proc / wall_s, 2) if wall_s else 0
+            d["input_fps"] = round(src.emitted / wall_s, 2) if wall_s else 0
+            d["frames_emitted"] = src.emitted
+            d["frames_processed"] = n_out
+            d["frames_dropped"] = src.emitted - n_out + src.dropped_producer
+            d["drop_pct"] = round(100 * d["frames_dropped"] / src.emitted, 2) if src.emitted else 0
+            d["deadline_miss_pct"] = round(100 * n_miss / n_out, 2) if n_out else 0
+            d["throughput_fps"] = round(n_out / wall_s, 2) if wall_s else 0
             d["stage_means_ms"] = {k: round(sum(v) / len(v), 3) for k, v in by_stage.items() if v}
+            import statistics as _st
+            d["acquire_mean_ms"] = round(_st.fmean(src.acquire_ms), 3) if src.acquire_ms else None
+            d["queue_wait_mean_ms"] = round(_st.fmean(wait_ms), 3) if wait_ms else None
             out["tests"]["end_to_end_ms"] = d
         except Exception as e:
+            out["status"] = S.FAILED
             out["errors"].append(f"pipeline: {e}")
         out["telemetry"] = mon.summary()
     return out

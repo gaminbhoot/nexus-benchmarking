@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.3.0 — qualification system
+
+- Explicit precision adapter (`yolo_util`): version-aware `quantize="fp16"` /
+  legacy `half`, no inference probing, post-warmup `effective_precision`
+  verification, fail-closed on mismatch (requested/effective/backend/version recorded).
+- Measurement states everywhere: FULL/PARTIAL/FALLBACK/UNSUPPORTED/FAILED/
+  INCONCLUSIVE/ABORTED/NOT_RUN. Only FULL is gate-eligible.
+- Process isolation: every module runs in a fresh worker process under a
+  supervising controller (timeout kill -> ABORTED, controller-side telemetry,
+  `--runs N` repetitions, `--blas-threads` pinning, `--gate-strict` exit code).
+- Purchase-gate engine (`gate.py` + `profiles/purchase_gate.yaml`): per-workload
+  criteria (uav/rover/dual), headroom margins, resource vetoes, accuracy veto,
+  INCONCLUSIVE-never-PASS semantics, per-check reasons in the HTML report.
+- Real-time streams (`stream.py`): paced producer thread at target_fps, bounded
+  queues, independent acquisition (read+decode) latency, queue-wait in e2e.
+- Pipeline rewritten on paced streams: input vs processed FPS, drops, misses,
+  FULL only with verified YOLO + real pixels.
+- Integrated rewritten: fixed the `pop("_threads")` fusion-killer, realtime
+  (paced, sustained `duration_s`, bounded queues, drops/depth) + throughput modes.
+- Thermal rewritten: fixed 5 s windows (burst/steady/min), fail-closed on
+  requested-model failure (no silent GEMM swap), same precision path as inference.
+- New modules: `backends` (torch fp32/fp16 verified, ONNX CUDA, TensorRT fp16/int8
+  gated NOT_RUN without stack), `accuracy` (fp32-vs-candidate agreement + mAP via
+  `--val-data`), `coldstart` (load/first/steady in fresh process), `decode`
+  (CPU/HW probe, FULL on `--video`), `matrix` (res x batch x FPS sweep, per-cell
+  fresh processes, OOM pruning).
+- VRAM: driver `mem_get_info`, allocator `memory_stats`, free-before/peak/
+  free-after model protocol with working-set-above-baseline (no more
+  total-minus-current).
+- Safety: CPU and GPU temps evaluated independently (was: GPU masked by CPU).
+- CPU: BLAS identity recorded (threadpoolctl/numpy config); heavier sustained test
+  with degradation %.
+- Provenance manifest in every report (git SHA/dirty, versions, model/config
+  SHA256, power state). 57 tests green.
+
 ## 0.2.0 — honest measurements
 
 - `inference`: `--precision fp16` now casts weights AND passes the precision flag

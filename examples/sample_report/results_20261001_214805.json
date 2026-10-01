@@ -1,0 +1,1713 @@
+{
+  "_profile": {
+    "os": "Darwin 27.0.0 (arm64)",
+    "kernel": "Darwin Kernel Version 27.0.0: Tue Aug 11 21:06:40 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T6050",
+    "python": "3.14.7",
+    "cpu": {
+      "brand": "Apple M5 Pro",
+      "physical_cores": 15,
+      "logical_cores": 15,
+      "freq_mhz": "unavailable"
+    },
+    "memory": {
+      "ram_total_gb": 25.77,
+      "swap_total_gb": 0.0
+    },
+    "storage": {
+      "total_gb": 994.6,
+      "free_gb": 689.7
+    },
+    "gpu": {
+      "vendor": "unavailable (no nvidia-smi)",
+      "note": "non-NVIDIA or driverless host \u2014 GPU fields unavailable, not zero"
+    },
+    "accelerators": {
+      "torch": "2.14.1",
+      "cuda_available": false,
+      "cuda_runtime": "unavailable",
+      "cudnn": "unavailable",
+      "tensorrt": "missing",
+      "mps_available": true
+    },
+    "packages": {
+      "ultralytics": "8.4.171",
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "matplotlib": "3.11.2",
+      "yaml": "6.0.3",
+      "opencv": "5.0.0"
+    }
+  },
+  "_config": {
+    "seed": 0,
+    "warmup": 1,
+    "repeats": 3,
+    "duration_s": 3,
+    "device": "auto",
+    "imgsz": 320,
+    "batch": 1,
+    "precision": "fp32",
+    "model": "",
+    "reid_model": "",
+    "video": "",
+    "uav_video": "",
+    "rover_video": "",
+    "image_dir": "",
+    "imgsz_list": null,
+    "batch_list": null,
+    "agent_frames": 60,
+    "target_fps": 15.0,
+    "target_fps_list": null,
+    "integrated_mode": "realtime",
+    "val_data": "",
+    "blas_threads": null,
+    "worker_timeout_s": null,
+    "runs": 1,
+    "throttle_temp_c": 83,
+    "req_fps": 15,
+    "out": "/tmp/yb_all"
+  },
+  "_provenance": {
+    "benchmark": "nexus-benchmarking",
+    "benchmark_version": "0.2.0",
+    "git": {
+      "sha": "551b2d9b36138289c2d29672ae912c0bd6e6d413",
+      "dirty": true,
+      "root": "/Users/jay/Documents/Projects/nexus-benchmarking"
+    },
+    "timestamp_utc": "2026-10-01T21:45:32Z",
+    "python": "3.14.7",
+    "platform": "Darwin 27.0.0 (arm64)",
+    "packages": {
+      "torch": "2.14.1",
+      "ultralytics": "8.4.171",
+      "opencv": "5.0.0",
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "tensorrt": "missing",
+      "onnxruntime": "missing"
+    },
+    "model_sha256": "none",
+    "config_sha256": "f921baf425ceb0be",
+    "power": {
+      "ac": true,
+      "battery_pct": 90
+    }
+  },
+  "cpu": {
+    "module": "cpu",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "blas": "{'name': 'accelerate', 'found': True, 'version': 'unknown', 'detection method': 'system', 'include directory': 'unknown', 'lib directory': 'unknown', 'openblas configuration': 'unknown', 'pc file directory': 'unknown'}",
+      "threadpools": "threadpoolctl not installed (pin via --blas-threads)"
+    },
+    "tests": {
+      "single_thread_matmul_ms": {
+        "n": 3,
+        "mean_ms": 0.278027340148886,
+        "median_ms": 0.1488330017309636,
+        "p95_ms": 0.4991202004021033,
+        "p99_ms": 0.5302568402839825,
+        "stdev_ms": 0.22517990079884215,
+        "throughput_ips": 3596.7685748620675
+      },
+      "multithread_pool_ms": {
+        "total_ms": 1.4
+      },
+      "preprocess_decode_ms": {
+        "n": 3,
+        "mean_ms": 2.482346666511148,
+        "median_ms": 1.5925830230116844,
+        "p95_ms": 4.349470185115933,
+        "p99_ms": 4.594526821747422,
+        "stdev_ms": 1.8925347544885804,
+        "throughput_ips": 402.84462016961766
+      },
+      "sustained": {
+        "iters": 1327,
+        "seconds": 3.0,
+        "ips": 442.3,
+        "degradation_pct": -20.8
+      }
+    },
+    "errors": [],
+    "status": "FULL",
+    "telemetry": {
+      "n": 6,
+      "cpu_pct": {
+        "mean": 11.18,
+        "max": 14.4
+      },
+      "ram_pct": {
+        "mean": 65.65,
+        "max": 65.7
+      },
+      "proc_rss_mb": {
+        "mean": 220.18,
+        "max": 256.7
+      }
+    },
+    "controller_telemetry": {
+      "n": 8,
+      "cpu_pct": {
+        "mean": 11.36,
+        "max": 15.0
+      },
+      "ram_pct": {
+        "mean": 65.67,
+        "max": 65.8
+      },
+      "proc_rss_mb": {
+        "mean": 310.0,
+        "max": 310.0
+      }
+    }
+  },
+  "gpu": {
+    "module": "gpu",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps"
+    },
+    "tests": {
+      "matmul_fp32": {
+        "n": 1024,
+        "dtype": "float32",
+        "mean_ms": 0.046,
+        "measured_gemm_tflops": 46.797,
+        "note": "synchronized GEMM microbenchmark; not a system score"
+      },
+      "conv_fp32_ms": {
+        "n": 3,
+        "mean_ms": 0.047638663090765476,
+        "median_ms": 0.032082985853776336,
+        "p95_ms": 0.0816954969195649,
+        "p99_ms": 0.08610549790319055,
+        "stdev_ms": 0.03452801133297717,
+        "throughput_ips": 20991.3531388299
+      },
+      "bandwidth": {
+        "h2d_gbps": 5.79,
+        "d2d_copy_gbps": 806.19,
+        "d2h_gbps": 11.2,
+        "size_mb": 256
+      },
+      "precision_note": "fp16/int8 throughput probed on CUDA only"
+    },
+    "errors": [],
+    "telemetry": {
+      "n": 2,
+      "cpu_pct": {
+        "mean": 6.45,
+        "max": 12.9
+      },
+      "ram_pct": {
+        "mean": 66.5,
+        "max": 67.1
+      },
+      "proc_rss_mb": {
+        "mean": 421.95,
+        "max": 618.1
+      }
+    },
+    "status": "FULL",
+    "controller_telemetry": {
+      "n": 4,
+      "cpu_pct": {
+        "mean": 9.28,
+        "max": 13.6
+      },
+      "ram_pct": {
+        "mean": 67.2,
+        "max": 70.6
+      },
+      "proc_rss_mb": {
+        "mean": 310.0,
+        "max": 310.0
+      }
+    }
+  },
+  "memory": {
+    "module": "memory",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps"
+    },
+    "tests": {
+      "ram_alloc_touch_16mb_gbps": 3.76,
+      "ram_alloc_touch_64mb_gbps": 23.82,
+      "ram_alloc_touch_256mb_gbps": 22.28,
+      "ram_total_gb": 25.77,
+      "vram_note": "VRAM ladder probed on CUDA only",
+      "proc_peak_rss_mb": 225.0
+    },
+    "errors": [],
+    "telemetry": {
+      "n": 1,
+      "cpu_pct": {
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "ram_pct": {
+        "mean": 64.4,
+        "max": 64.4
+      },
+      "proc_rss_mb": {
+        "mean": 225.0,
+        "max": 225.0
+      }
+    },
+    "status": "FULL",
+    "controller_telemetry": {
+      "n": 3,
+      "cpu_pct": {
+        "mean": 3.53,
+        "max": 10.6
+      },
+      "ram_pct": {
+        "mean": 64.87,
+        "max": 65.4
+      },
+      "proc_rss_mb": {
+        "mean": 310.0,
+        "max": 310.0
+      }
+    }
+  },
+  "inference": {
+    "module": "inference",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": [
+        320
+      ],
+      "batch_list": [
+        1
+      ],
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps"
+    },
+    "tests": {},
+    "errors": [
+      "no YOLO weights found (pass --model path/to/weights.pt); no inference numbers reported. Synthetic proxies are not a substitute for YOLO \u2014 see README methodology."
+    ],
+    "status": "UNSUPPORTED",
+    "telemetry": {
+      "n": 0
+    },
+    "controller_telemetry": {
+      "n": 2,
+      "cpu_pct": {
+        "mean": 6.35,
+        "max": 12.7
+      },
+      "ram_pct": {
+        "mean": 64.15,
+        "max": 64.4
+      },
+      "proc_rss_mb": {
+        "mean": 310.0,
+        "max": 310.0
+      }
+    }
+  },
+  "reid": {
+    "module": "reid",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps",
+      "embedder": "reid_reference_embedder (lightweight CNN, NOT production Re-ID)"
+    },
+    "tests": {
+      "reid_embed_8query_vs_32gallery_ms": {
+        "n": 3,
+        "mean_ms": 1.058416994055733,
+        "median_ms": 1.1409999860916287,
+        "p95_ms": 1.190987796871923,
+        "p99_ms": 1.1954311578301713,
+        "stdev_ms": 0.19314565336531553,
+        "throughput_ips": 944.8072032253698,
+        "preprocess_mean_ms": 0.589,
+        "gallery_size": 32,
+        "note": "embedding inference + nearest-gallery match per query batch"
+      }
+    },
+    "errors": [],
+    "telemetry": {
+      "n": 1,
+      "cpu_pct": {
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "ram_pct": {
+        "mean": 64.4,
+        "max": 64.4
+      },
+      "proc_rss_mb": {
+        "mean": 227.6,
+        "max": 227.6
+      }
+    },
+    "status": "FULL",
+    "controller_telemetry": {
+      "n": 3,
+      "cpu_pct": {
+        "mean": 7.93,
+        "max": 13.1
+      },
+      "ram_pct": {
+        "mean": 64.43,
+        "max": 64.8
+      },
+      "proc_rss_mb": {
+        "mean": 310.1,
+        "max": 310.1
+      }
+    }
+  },
+  "tracking": {
+    "module": "tracking",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps",
+      "method": "deepsort_style_greedy (Kalman + appearance cascade; greedy, not Hungarian)",
+      "embedder": "reid_reference_embedder (lightweight CNN, NOT production Re-ID)"
+    },
+    "tests": {
+      "association_per_frame_ms": {
+        "n": 20,
+        "mean_ms": 0.17946464649867266,
+        "median_ms": 0.16527099069207907,
+        "p95_ms": 0.23956491349963477,
+        "p99_ms": 0.30071297514950845,
+        "stdev_ms": 0.04188985922094272,
+        "throughput_ips": 5572.128101605773,
+        "id_switches": 0,
+        "gt_assignments": 108,
+        "switch_rate": 0.0
+      },
+      "embedding_per_frame_ms": {
+        "n": 20,
+        "mean_ms": 2.3726875515421852,
+        "median_ms": 0.8278750174213201,
+        "p95_ms": 8.154954195197211,
+        "p99_ms": 13.892258031701193,
+        "stdev_ms": 3.5973500521097743,
+        "throughput_ips": 421.4629942952354,
+        "note": "embedding inference supporting association"
+      },
+      "live_tracks": 6
+    },
+    "errors": [],
+    "telemetry": {
+      "n": 1,
+      "cpu_pct": {
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "ram_pct": {
+        "mean": 64.5,
+        "max": 64.5
+      },
+      "proc_rss_mb": {
+        "mean": 227.6,
+        "max": 227.6
+      }
+    },
+    "status": "FULL",
+    "controller_telemetry": {
+      "n": 3,
+      "cpu_pct": {
+        "mean": 7.97,
+        "max": 14.1
+      },
+      "ram_pct": {
+        "mean": 64.4,
+        "max": 64.7
+      },
+      "proc_rss_mb": {
+        "mean": 310.17,
+        "max": 310.2
+      }
+    }
+  },
+  "vision": {
+    "module": "vision",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps",
+      "detector": "motion_detector_fallback (tracks pipeline cost only, not detection quality)",
+      "embedder": "reid_reference_embedder (lightweight CNN, NOT production Re-ID)"
+    },
+    "tests": {
+      "detection_per_frame_ms": {
+        "n": 9,
+        "mean_ms": 0.10206977539281878,
+        "median_ms": 0.08562501170672476,
+        "p95_ms": 0.1707087852992117,
+        "p99_ms": 0.1945753418840468,
+        "stdev_ms": 0.040178493121206076,
+        "throughput_ips": 9797.219560359255,
+        "source": "motion_detector_fallback (tracks pipeline cost only, not detection quality)"
+      },
+      "embedding_per_frame_ms": {
+        "n": 9,
+        "mean_ms": 12.648587997925157,
+        "median_ms": 2.086249995045364,
+        "p95_ms": 49.81435020454226,
+        "p99_ms": 67.53560365177691,
+        "stdev_ms": 22.97068160207389,
+        "throughput_ips": 79.06020815636002
+      },
+      "association_per_frame_ms": {
+        "n": 9,
+        "mean_ms": 0.2502175630070269,
+        "median_ms": 0.2501250128261745,
+        "p95_ms": 0.30625879880972207,
+        "p99_ms": 0.3182853583712131,
+        "stdev_ms": 0.04592077396624366,
+        "throughput_ips": 3996.5220186079296,
+        "confirmed_tracks": 4
+      },
+      "optical_flow_ms": {
+        "n": 9,
+        "mean_ms": 16.74477777366216,
+        "median_ms": 16.562083997996524,
+        "p95_ms": 17.569424788234755,
+        "p99_ms": 17.883851350052282,
+        "stdev_ms": 0.48403856098510145,
+        "throughput_ips": 59.720111757642954
+      }
+    },
+    "errors": [],
+    "telemetry": {
+      "n": 1,
+      "cpu_pct": {
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "ram_pct": {
+        "mean": 64.5,
+        "max": 64.5
+      },
+      "proc_rss_mb": {
+        "mean": 257.2,
+        "max": 257.2
+      }
+    },
+    "status": "FULL",
+    "controller_telemetry": {
+      "n": 3,
+      "cpu_pct": {
+        "mean": 8.13,
+        "max": 13.2
+      },
+      "ram_pct": {
+        "mean": 64.4,
+        "max": 64.8
+      },
+      "proc_rss_mb": {
+        "mean": 310.2,
+        "max": 310.2
+      }
+    }
+  },
+  "pipeline": {
+    "module": "pipeline",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps",
+      "deadline_ms": 66.67,
+      "detector": "no model path (pass --model for YOLO)",
+      "embedder": "reid_reference_embedder (lightweight CNN, NOT production Re-ID)",
+      "source": "synthetic_moving_squares (labelled)"
+    },
+    "tests": {
+      "end_to_end_ms": {
+        "n": 45,
+        "mean_ms": 6.4693450927734375,
+        "median_ms": 3.679990768432617,
+        "p95_ms": 16.341781616210927,
+        "p99_ms": 50.6471920013429,
+        "stdev_ms": 11.125490567923238,
+        "throughput_ips": 154.57515183678282,
+        "input_fps": 15.0,
+        "frames_emitted": 46,
+        "frames_processed": 45,
+        "frames_dropped": 1,
+        "drop_pct": 2.17,
+        "deadline_miss_pct": 2.22,
+        "throughput_fps": 14.67,
+        "stage_means_ms": {
+          "resize": 0.565,
+          "detect": 0.124,
+          "embed": 5.196,
+          "associate": 0.28,
+          "telemetry": 0.042
+        },
+        "acquire_mean_ms": 0.457,
+        "queue_wait_mean_ms": 0.26
+      }
+    },
+    "errors": [
+      "PARTIAL: motion fallback, YOLO not benchmarked (informational only, not gate-eligible)"
+    ],
+    "status": "PARTIAL",
+    "telemetry": {
+      "n": 7,
+      "cpu_pct": {
+        "mean": 7.91,
+        "max": 10.2
+      },
+      "ram_pct": {
+        "mean": 64.71,
+        "max": 64.8
+      },
+      "proc_rss_mb": {
+        "mean": 412.26,
+        "max": 451.3
+      }
+    },
+    "controller_telemetry": {
+      "n": 9,
+      "cpu_pct": {
+        "mean": 8.69,
+        "max": 13.4
+      },
+      "ram_pct": {
+        "mean": 64.62,
+        "max": 64.8
+      },
+      "proc_rss_mb": {
+        "mean": 310.2,
+        "max": 310.2
+      }
+    }
+  },
+  "mapping3d": {
+    "module": "mapping3d",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "method": "two-view ORB->E->pose->triangulate vs GT"
+    },
+    "tests": {
+      "visual_odometry_two_view_ms": {
+        "n": 3,
+        "mean_ms": 52.40334666450508,
+        "median_ms": 44.64683300466277,
+        "p95_ms": 73.0262701807078,
+        "p99_ms": 75.54888681857847,
+        "stdev_ms": 21.001203399294432,
+        "throughput_ips": 19.082750695335662,
+        "success_rate": 1.0,
+        "mean_rot_err_deg": 0.86,
+        "mean_trans_dir_err_deg": 6.47,
+        "mean_reproj_px": 24.67,
+        "stage_means_ms": {
+          "detect_ms": 23.59,
+          "match_ms": 1.29,
+          "estimate_ms": 25.72,
+          "triangulate_ms": 1.65
+        },
+        "note": "errors vs KNOWN ground-truth pose \u2014 small errors mean the pipeline is geometrically sound on this scene"
+      },
+      "pointcloud_voxel_hash_ms": {
+        "n": 3,
+        "mean_ms": 7.537597004557028,
+        "median_ms": 7.372125022811815,
+        "p95_ms": 8.24579999607522,
+        "p99_ms": 8.323459993698634,
+        "stdev_ms": 0.7366156874252563,
+        "throughput_ips": 132.66827602953924,
+        "label": "preprocessing_microbench (voxel hashing only)"
+      }
+    },
+    "errors": [],
+    "telemetry": {
+      "n": 0
+    },
+    "status": "FULL",
+    "controller_telemetry": {
+      "n": 3,
+      "cpu_pct": {
+        "mean": 8.33,
+        "max": 16.5
+      },
+      "ram_pct": {
+        "mean": 64.27,
+        "max": 64.5
+      },
+      "proc_rss_mb": {
+        "mean": 310.17,
+        "max": 310.2
+      }
+    }
+  },
+  "comms": {
+    "module": "comms",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all"
+    },
+    "tests": {
+      "mavlink_serialize": {
+        "msgs": 500,
+        "total_ms": 2.85,
+        "kmsgs_per_s": 175.28,
+        "bytes_per_msg": 21
+      },
+      "mavlink_parse_crc": {
+        "msgs": 500,
+        "total_ms": 2.78,
+        "kmsgs_per_s": 179.73,
+        "corruption_rejected": true
+      },
+      "loopback_udp_rtt_ms": {
+        "n": 500,
+        "mean_ms": 0.5008489183965139,
+        "median_ms": 0.2170830121031031,
+        "p95_ms": 1.1583503001020257,
+        "p99_ms": 3.2100337391602762,
+        "stdev_ms": 2.7173174174424557,
+        "throughput_ips": 1996.6100819415494,
+        "unit": "ms RTT, UDP loopback (stack cost, not link latency)",
+        "lost": 0
+      },
+      "telemetry_process_ms": {
+        "n": 500,
+        "mean_ms": 0.0014975881204009056,
+        "median_ms": 0.0014169781934469938,
+        "p95_ms": 0.0017080164980143309,
+        "p99_ms": 0.002086508902721105,
+        "stdev_ms": 0.0005210318311155783,
+        "throughput_ips": 667740.3395349445
+      },
+      "sim_link_model_ms": {
+        "n": 500,
+        "mean_ms": 13.318720114270977,
+        "median_ms": 10.855195863133412,
+        "p95_ms": 28.66025759886783,
+        "p99_ms": 40.54264842405351,
+        "stdev_ms": 8.046632191812947,
+        "throughput_ips": 75.08228954586276,
+        "unit": "ms SIMULATED (model only \u2014 not a measurement)"
+      },
+      "ros2": "unavailable (rclpy not installed)"
+    },
+    "errors": [],
+    "telemetry": {
+      "n": 4,
+      "cpu_pct": {
+        "mean": 5.22,
+        "max": 11.4
+      },
+      "ram_pct": {
+        "mean": 64.25,
+        "max": 64.4
+      },
+      "proc_rss_mb": {
+        "mean": 168.07,
+        "max": 216.6
+      }
+    },
+    "status": "FULL",
+    "controller_telemetry": {
+      "n": 6,
+      "cpu_pct": {
+        "mean": 24.98,
+        "max": 100.0
+      },
+      "ram_pct": {
+        "mean": 64.25,
+        "max": 64.4
+      },
+      "proc_rss_mb": {
+        "mean": 310.2,
+        "max": 310.2
+      }
+    }
+  },
+  "integrated": {
+    "module": "integrated",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": {
+        "requested": "fp32",
+        "effective": "unverified",
+        "backend": "ultralytics",
+        "ultralytics_version": "8.4.171",
+        "flag": null,
+        "error": "no model path (pass --model for YOLO)"
+      },
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps",
+      "mode": "realtime",
+      "detector": "no model path (pass --model for YOLO)",
+      "embedder": "reid_reference_embedder (lightweight CNN, NOT production Re-ID)",
+      "uav_source": "synthetic_moving_squares (labelled)",
+      "rover_source": "synthetic_moving_squares (labelled)"
+    },
+    "tests": {
+      "alone": {
+        "uav": {
+          "fps": 14.6,
+          "median_ms": 3.6467500030994415,
+          "drops": 1
+        },
+        "rover": {
+          "fps": 14.6,
+          "median_ms": 3.371833998244256,
+          "drops": 1
+        }
+      },
+      "per_agent": {
+        "uav": {
+          "fps": 14.6,
+          "median_ms": 4.305999987991527,
+          "p95_ms": 10.240241594146935,
+          "p99_ms": 11.889518520329153,
+          "drops": 1,
+          "max_q": 0,
+          "frames_in": 46,
+          "frames_out": 45,
+          "vs_alone_pct": 100.0
+        },
+        "rover": {
+          "fps": 14.6,
+          "median_ms": 4.265665978891775,
+          "p95_ms": 11.251850012922658,
+          "p99_ms": 16.479468489997103,
+          "drops": 1,
+          "max_q": 0,
+          "frames_in": 46,
+          "frames_out": 45,
+          "vs_alone_pct": 100.0
+        }
+      },
+      "concurrent_fps": {
+        "uav": 14.6,
+        "rover": 14.6
+      },
+      "fusion": {
+        "ticks": 547,
+        "tick_ms": {
+          "n": 547,
+          "mean_ms": 0.0076642233565095575,
+          "median_ms": 0.006290996680036187,
+          "p95_ms": 0.017970791668631112,
+          "p99_ms": 0.026785503723658607,
+          "stdev_ms": 0.005561163186540917,
+          "throughput_ips": 130476.3644643337
+        },
+        "world_keys": {
+          "uav": 45,
+          "rover": 45
+        },
+        "max_q": 1
+      },
+      "note": "realtime mode: bounded queues, paced inputs \u2014 drops/queue depth are the scaling signal. vs_alone_pct <100 = contention cost."
+    },
+    "errors": [
+      "PARTIAL: fallback detector and/or synthetic pixels (informational, not gate-eligible)"
+    ],
+    "status": "PARTIAL",
+    "telemetry": {
+      "n": 19,
+      "cpu_pct": {
+        "mean": 10.06,
+        "max": 17.1
+      },
+      "ram_pct": {
+        "mean": 64.83,
+        "max": 65.0
+      },
+      "proc_rss_mb": {
+        "mean": 464.62,
+        "max": 524.1
+      }
+    },
+    "controller_telemetry": {
+      "n": 21,
+      "cpu_pct": {
+        "mean": 9.5,
+        "max": 15.8
+      },
+      "ram_pct": {
+        "mean": 64.79,
+        "max": 65.0
+      },
+      "proc_rss_mb": {
+        "mean": 310.2,
+        "max": 310.2
+      }
+    }
+  },
+  "thermal": {
+    "module": "thermal",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps",
+      "sustained_s": 3,
+      "window_s": 5.0,
+      "load": "gemm-1024 x4/iter on mps (explicit stress, no model requested)"
+    },
+    "tests": {
+      "sustained": {
+        "seconds": 3.0,
+        "iters": 65537,
+        "avg_ips": 21845.4
+      },
+      "throttling": "unknown",
+      "throttling_evidence": "insufficient telemetry (no GPU temp/clock sensors)"
+    },
+    "errors": [],
+    "status": "FULL",
+    "telemetry": {
+      "n": 3,
+      "cpu_pct": {
+        "mean": 10.5,
+        "max": 15.8
+      },
+      "ram_pct": {
+        "mean": 65.1,
+        "max": 65.4
+      },
+      "proc_rss_mb": {
+        "mean": 435.43,
+        "max": 636.4
+      }
+    },
+    "controller_telemetry": {
+      "n": 215,
+      "cpu_pct": {
+        "mean": 8.08,
+        "max": 20.4
+      },
+      "ram_pct": {
+        "mean": 66.52,
+        "max": 67.5
+      },
+      "proc_rss_mb": {
+        "mean": 310.3,
+        "max": 310.3
+      }
+    }
+  },
+  "backends": {
+    "module": "backends",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps"
+    },
+    "tests": {
+      "int8_tensor_alloc": "n/a (non-CUDA)"
+    },
+    "errors": [
+      "no YOLO weights; backend matrix needs a model"
+    ],
+    "status": "UNSUPPORTED",
+    "telemetry": {
+      "n": 0
+    },
+    "controller_telemetry": {
+      "n": 2,
+      "cpu_pct": {
+        "mean": 5.4,
+        "max": 10.8
+      },
+      "ram_pct": {
+        "mean": 64.35,
+        "max": 64.6
+      },
+      "proc_rss_mb": {
+        "mean": 310.3,
+        "max": 310.3
+      }
+    }
+  },
+  "accuracy": {
+    "module": "accuracy",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps"
+    },
+    "tests": {},
+    "errors": [
+      "accuracy needs --model weights"
+    ],
+    "status": "UNSUPPORTED",
+    "telemetry": {
+      "n": 0
+    },
+    "controller_telemetry": {
+      "n": 2,
+      "cpu_pct": {
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "ram_pct": {
+        "mean": 64.35,
+        "max": 64.6
+      },
+      "proc_rss_mb": {
+        "mean": 310.3,
+        "max": 310.3
+      }
+    }
+  },
+  "coldstart": {
+    "module": "coldstart",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "resolved_device": "mps"
+    },
+    "tests": {},
+    "errors": [
+      "coldstart needs --model weights"
+    ],
+    "status": "UNSUPPORTED",
+    "telemetry": {
+      "n": 0
+    },
+    "controller_telemetry": {
+      "n": 2,
+      "cpu_pct": {
+        "mean": 5.85,
+        "max": 11.7
+      },
+      "ram_pct": {
+        "mean": 64.35,
+        "max": 64.6
+      },
+      "proc_rss_mb": {
+        "mean": 310.3,
+        "max": 310.3
+      }
+    }
+  },
+  "decode": {
+    "module": "decode",
+    "config": {
+      "seed": 0,
+      "warmup": 1,
+      "repeats": 3,
+      "duration_s": 3,
+      "device": "auto",
+      "imgsz": 320,
+      "batch": 1,
+      "precision": "fp32",
+      "model": "",
+      "reid_model": "",
+      "video": "",
+      "uav_video": "",
+      "rover_video": "",
+      "image_dir": "",
+      "imgsz_list": null,
+      "batch_list": null,
+      "agent_frames": 60,
+      "target_fps": 15.0,
+      "target_fps_list": null,
+      "integrated_mode": "realtime",
+      "val_data": "",
+      "blas_threads": null,
+      "worker_timeout_s": null,
+      "runs": 1,
+      "throttle_temp_c": 83,
+      "req_fps": 15,
+      "out": "/tmp/yb_all",
+      "hw_acceleration_prop": 0.0,
+      "clip": "/tmp/nexus_decode_probe.mp4"
+    },
+    "tests": {
+      "decode_per_frame_ms": {
+        "n": 90,
+        "mean_ms": 0.14213463226850662,
+        "median_ms": 0.1007289974950254,
+        "p95_ms": 0.14922746049705893,
+        "p99_ms": 0.5617366451770047,
+        "stdev_ms": 0.3661645202606044,
+        "throughput_ips": 7035.582982414162,
+        "frames": 90,
+        "decode_fps": 6958.4,
+        "hw_acceleration": 0.0
+      }
+    },
+    "errors": [
+      "PARTIAL: generated H.264 clip (pass --video for FULL)"
+    ],
+    "status": "PARTIAL",
+    "telemetry": {
+      "n": 1,
+      "cpu_pct": {
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "ram_pct": {
+        "mean": 64.2,
+        "max": 64.2
+      },
+      "proc_rss_mb": {
+        "mean": 61.0,
+        "max": 61.0
+      }
+    },
+    "controller_telemetry": {
+      "n": 3,
+      "cpu_pct": {
+        "mean": 7.43,
+        "max": 13.8
+      },
+      "ram_pct": {
+        "mean": 64.47,
+        "max": 64.7
+      },
+      "proc_rss_mb": {
+        "mean": 310.3,
+        "max": 310.3
+      }
+    }
+  },
+  "matrix": {
+    "module": "matrix",
+    "config": {
+      "imgsz_list": null,
+      "batch_list": null,
+      "target_fps_list": null,
+      "model": "",
+      "precision": "fp32",
+      "device": "auto",
+      "req_fps": 15
+    },
+    "tests": {
+      "iz320_b1_f15.0": {
+        "status": "PARTIAL",
+        "fps": 14.67,
+        "p95_ms": 13.016510009765613,
+        "p99_ms": 54.66336250305189,
+        "miss_pct": 2.22,
+        "drop_pct": 2.17
+      },
+      "pruned_cells": 0,
+      "oom_boundary": "none found in sweep"
+    },
+    "errors": [
+      "PARTIAL: at least one cell was not FULL evidence"
+    ],
+    "status": "PARTIAL",
+    "telemetry": {
+      "n": 8,
+      "cpu_pct": {
+        "mean": 6.53,
+        "max": 13.2
+      },
+      "ram_pct": {
+        "mean": 65.17,
+        "max": 65.4
+      },
+      "proc_rss_mb": {
+        "mean": 194.11,
+        "max": 216.6
+      }
+    },
+    "controller_telemetry": {
+      "n": 10,
+      "cpu_pct": {
+        "mean": 7.47,
+        "max": 17.2
+      },
+      "ram_pct": {
+        "mean": 65.08,
+        "max": 65.3
+      },
+      "proc_rss_mb": {
+        "mean": 310.3,
+        "max": 310.3
+      }
+    }
+  },
+  "_gate": {
+    "verdict": "FAIL",
+    "req_fps": 15,
+    "checks": [
+      {
+        "check": "uav.evidence_full",
+        "pass": false,
+        "detail": "pipeline status=PARTIAL"
+      },
+      {
+        "check": "rover.evidence_full",
+        "pass": false,
+        "detail": "pipeline status=PARTIAL"
+      },
+      {
+        "check": "dual.evidence_full",
+        "pass": false,
+        "detail": "integrated status=PARTIAL"
+      },
+      {
+        "check": "resources.vram_headroom",
+        "pass": false,
+        "detail": "peak reserved None% vs 85.0%"
+      },
+      {
+        "check": "resources.no_throttle",
+        "pass": true,
+        "detail": "thermal=unknown"
+      },
+      {
+        "check": "resources.no_oom",
+        "pass": true,
+        "detail": "clean"
+      },
+      {
+        "check": "accuracy.measured",
+        "pass": false,
+        "detail": "no accuracy evidence (INCONCLUSIVE, not pass)"
+      }
+    ],
+    "states": {
+      "FULL": 9,
+      "UNSUPPORTED": 4,
+      "PARTIAL": 4
+    }
+  },
+  "_meta": {
+    "timestamp_utc": "20261001_214805",
+    "req_fps": 15,
+    "feasibility": {
+      "cpu": "ok",
+      "gpu": "ok",
+      "memory": "ok",
+      "inference": "unsupported",
+      "reid": "ok",
+      "tracking": "ok",
+      "vision": "ok",
+      "pipeline": "limited",
+      "mapping3d": "limited",
+      "comms": "ok",
+      "integrated": "limited",
+      "thermal": "ok",
+      "backends": "unsupported",
+      "accuracy": "unsupported",
+      "coldstart": "unsupported",
+      "decode": "limited",
+      "matrix": "limited"
+    },
+    "feasibility_reasons": {
+      "cpu": [
+        "p95 within 66.7ms deadline; misses/drops <5%"
+      ],
+      "gpu": [
+        "p95 within 66.7ms deadline; misses/drops <5%"
+      ],
+      "memory": [
+        "p95 within 66.7ms deadline; misses/drops <5%"
+      ],
+      "inference": [
+        "status=UNSUPPORTED: no real workload executed"
+      ],
+      "reid": [
+        "p95 within 66.7ms deadline; misses/drops <5%"
+      ],
+      "tracking": [
+        "p95 within 66.7ms deadline; misses/drops <5%"
+      ],
+      "vision": [
+        "p95 within 66.7ms deadline; misses/drops <5%"
+      ],
+      "pipeline": [
+        "status=PARTIAL: partial evidence only (not gate-grade)",
+        "measured 14.67 FPS vs required 15 FPS",
+        "1 non-fatal error(s); see log"
+      ],
+      "mapping3d": [
+        "visual_odometry_two_view_ms: p95 73.0ms > deadline 66.7ms"
+      ],
+      "comms": [
+        "p95 within 66.7ms deadline; misses/drops <5%"
+      ],
+      "integrated": [
+        "status=PARTIAL: partial evidence only (not gate-grade)",
+        "1 non-fatal error(s); see log"
+      ],
+      "thermal": [
+        "p95 within 66.7ms deadline; misses/drops <5%"
+      ],
+      "backends": [
+        "status=UNSUPPORTED: no real workload executed"
+      ],
+      "accuracy": [
+        "status=UNSUPPORTED: no real workload executed"
+      ],
+      "coldstart": [
+        "status=UNSUPPORTED: no real workload executed"
+      ],
+      "decode": [
+        "status=PARTIAL: partial evidence only (not gate-grade)",
+        "1 non-fatal error(s); see log"
+      ],
+      "matrix": [
+        "status=PARTIAL: partial evidence only (not gate-grade)",
+        "1 non-fatal error(s); see log"
+      ]
+    },
+    "gate": {
+      "verdict": "FAIL",
+      "req_fps": 15,
+      "checks": [
+        {
+          "check": "uav.evidence_full",
+          "pass": false,
+          "detail": "pipeline status=PARTIAL"
+        },
+        {
+          "check": "rover.evidence_full",
+          "pass": false,
+          "detail": "pipeline status=PARTIAL"
+        },
+        {
+          "check": "dual.evidence_full",
+          "pass": false,
+          "detail": "integrated status=PARTIAL"
+        },
+        {
+          "check": "resources.vram_headroom",
+          "pass": false,
+          "detail": "peak reserved None% vs 85.0%"
+        },
+        {
+          "check": "resources.no_throttle",
+          "pass": true,
+          "detail": "thermal=unknown"
+        },
+        {
+          "check": "resources.no_oom",
+          "pass": true,
+          "detail": "clean"
+        },
+        {
+          "check": "accuracy.measured",
+          "pass": false,
+          "detail": "no accuracy evidence (INCONCLUSIVE, not pass)"
+        }
+      ],
+      "states": {
+        "FULL": 9,
+        "UNSUPPORTED": 4,
+        "PARTIAL": 4
+      }
+    },
+    "provenance": {
+      "benchmark": "nexus-benchmarking",
+      "benchmark_version": "0.2.0",
+      "git": {
+        "sha": "551b2d9b36138289c2d29672ae912c0bd6e6d413",
+        "dirty": true,
+        "root": "/Users/jay/Documents/Projects/nexus-benchmarking"
+      },
+      "timestamp_utc": "2026-10-01T21:45:32Z",
+      "python": "3.14.7",
+      "platform": "Darwin 27.0.0 (arm64)",
+      "packages": {
+        "torch": "2.14.1",
+        "ultralytics": "8.4.171",
+        "opencv": "5.0.0",
+        "numpy": "2.5.3",
+        "pandas": "3.0.6",
+        "tensorrt": "missing",
+        "onnxruntime": "missing"
+      },
+      "model_sha256": "none",
+      "config_sha256": "f921baf425ceb0be",
+      "power": {
+        "ac": true,
+        "battery_pct": 90
+      }
+    },
+    "method": "tail-latency + deadline-miss + drop-rate + measured throughput vs required FPS; medians never decide alone"
+  }
+}

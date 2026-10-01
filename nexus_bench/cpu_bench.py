@@ -23,7 +23,22 @@ def _matmul(n=256, repeats=5):
 
 def run(cfg):
     guard = Guard()
-    out = {"module": "cpu", "config": cfg, "tests": {}, "errors": []}
+    out = {"module": "cpu", "config": cfg, "tests": {}, "errors": [],
+           "status": "FULL"}
+    try:  # BLAS identity: the "single-thread" claim is only valid if BLAS is pinned.
+        import numpy as np
+        bl = np.show_config(mode="dicts") if hasattr(np, "show_config") else {}
+        libs = str(bl.get("Build Dependencies", {}).get("blas", bl))[:300]
+        out["config"]["blas"] = libs
+    except Exception:
+        out["config"]["blas"] = "unknown"
+    try:
+        import threadpoolctl
+        pools = [{"lib": p["filepath"].split("/")[-1], "threads": p["num_threads"]}
+                 for p in threadpoolctl.threadpool_info()]
+        out["config"]["threadpools"] = pools
+    except Exception:
+        out["config"]["threadpools"] = "threadpoolctl not installed (pin via --blas-threads)"
     with Monitor() as mon:
         try:
             out["tests"]["single_thread_matmul_ms"] = summarize(_matmul(256, cfg.get("repeats", 20)))
@@ -53,13 +68,20 @@ def run(cfg):
         except Exception as e:
             out["errors"].append(f"preprocess: {e}")
         try:
-            t_end = time.time() + min(cfg.get("duration_s", 20), 15)
-            it = 0; t0 = time.time()
+            t_end = time.time() + min(cfg.get("duration_s", 20), 30)
+            marks, it, t0 = [], 0, time.time()
             while time.time() < t_end and guard.ok(mon.samples[-1] if mon.samples else None):
-                _matmul(128, 1); it += 1
+                _matmul(512, 1)  # device-agnostic heavy CPU slice, not a toy loop
+                it += 1
+                marks.append((time.time() - t0, it / max(1e-9, time.time() - t0)))
             dt = time.time() - t0
+            half = len(marks) // 2
+            import statistics as _st
+            first = _st.fmean(m[1] for m in marks[:half]) if half else 0
+            second = _st.fmean(m[1] for m in marks[half:]) if marks[half:] else 0
             out["tests"]["sustained"] = {"iters": it, "seconds": round(dt, 2),
-                                         "ips": round(it / dt, 1) if dt else 0}
+                                         "ips": round(it / dt, 1) if dt else 0,
+                                         "degradation_pct": round(100 * (first - second) / first, 1) if first else 0}
             if guard.reason:
                 out["errors"].append(f"sustained stopped: {guard.reason}")
         except Exception as e:

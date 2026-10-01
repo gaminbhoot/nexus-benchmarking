@@ -7,13 +7,11 @@ import os
 import time
 import numpy as np
 
+from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.profiles import resolve_device
 from nexus_bench.stats import summarize
-from nexus_bench.yolo_util import load_weights, precision_kwargs
-
-STATUS_REAL = "measured_yolo"
-STATUS_UNSUPPORTED = "unsupported_no_weights"
+from nexus_bench.yolo_util import check_effective, load_weights, precision_kwargs
 
 def _synthetic_batch(h, w, batch, seed=0):
     rng = np.random.default_rng(seed)
@@ -32,9 +30,9 @@ def run(cfg):
     out = {"module": "inference",
            "config": {**cfg, "resolved_device": dev, "imgsz_list": imgszs,
                       "batch_list": batches},
-           "tests": {}, "errors": [], "status": STATUS_REAL}
+           "tests": {}, "errors": [], "status": S.FULL}
     if not model_path or not os.path.exists(model_path):
-        out["status"] = STATUS_UNSUPPORTED
+        out["status"] = S.UNSUPPORTED
         out["errors"].append(
             "no YOLO weights found (pass --model path/to/weights.pt); "
             "no inference numbers reported. Synthetic proxies are not a "
@@ -43,15 +41,22 @@ def run(cfg):
             out["telemetry"] = mon.summary()
         return out
     with Monitor() as mon:
-        model, tag = load_weights(model_path, want_fp16=(prec == "fp16"))
+        model, prec_rec = load_weights(model_path, want_fp16=(prec == "fp16"))
+        out["config"]["precision"] = prec_rec
         if model is None:
-            out["status"] = STATUS_UNSUPPORTED
-            out["errors"].append(f"{tag}; no inference numbers reported. "
+            out["status"] = S.UNSUPPORTED
+            out["errors"].append(f"{prec_rec.get('error')}; no inference numbers reported. "
                                  "Synthetic proxies are not a substitute for YOLO.")
             out["telemetry"] = mon.summary()
             return out
-        pk = precision_kwargs(model, prec == "fp16")
-        out["config"]["effective_precision"] = tag
+        try:
+            pk = precision_kwargs(prec == "fp16")
+        except RuntimeError as e:
+            out["status"] = S.FAILED
+            out["errors"].append(f"precision adapter: {e}")
+            out["telemetry"] = mon.summary()
+            return out
+        out["status"] = S.FULL
         w, r = cfg.get("warmup", 3), cfg.get("repeats", 20)
         for imgsz in imgszs:
             for bs in batches:
@@ -61,6 +66,12 @@ def run(cfg):
                     for _ in range(w):  # warmup with the SAME batched call shape
                         model.predict(frames, imgsz=imgsz, device=dev,
                                       verbose=False, **pk)
+                    if not check_effective(model, prec_rec):
+                        out["errors"].append(
+                            f"{key} FAILEDclosed: requested {prec_rec['requested']}, "
+                            f"effective {prec_rec['effective']} — numbers withheld")
+                        continue
+                    out["config"].setdefault("effective_precision", prec_rec["effective"])
                     lat, pre, post, ndet = [], [], [], []
                     iters = max(1, r // max(1, bs))
                     for i in range(iters):

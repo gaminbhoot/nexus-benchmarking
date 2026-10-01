@@ -1,0 +1,53 @@
+module,test,mean_ms,median_ms,p95_ms,p99_ms,throughput_ips,throughput_fps,per_image_ms,total_ms,avg_ips,kmsgs_per_s,degradation_pct,deadline_miss_pct,drop_pct,value,error
+cpu,single_thread_matmul_ms,0.278,0.149,0.499,0.53,3596.769,,,,,,,,,,
+cpu,multithread_pool_ms,,,,,,,,1.4,,,,,,,
+cpu,preprocess_decode_ms,2.482,1.593,4.349,4.595,402.845,,,,,,,,,,
+cpu,sustained,,,,,,,,,,,-20.8,,,,
+gpu,matmul_fp32,0.046,,,,,,,,,,,,,,
+gpu,conv_fp32_ms,0.048,0.032,0.082,0.086,20991.353,,,,,,,,,,
+gpu,bandwidth,,,,,,,,,,,,,,,
+gpu,precision_note,,,,,,,,,,,,,,fp16/int8 throughput probed on CUDA only,
+memory,ram_alloc_touch_16mb_gbps,,,,,,,,,,,,,,3.76,
+memory,ram_alloc_touch_64mb_gbps,,,,,,,,,,,,,,23.82,
+memory,ram_alloc_touch_256mb_gbps,,,,,,,,,,,,,,22.28,
+memory,ram_total_gb,,,,,,,,,,,,,,25.77,
+memory,vram_note,,,,,,,,,,,,,,VRAM ladder probed on CUDA only,
+memory,proc_peak_rss_mb,,,,,,,,,,,,,,225.0,
+inference,ERROR,,,,,,,,,,,,,,,no YOLO weights found (pass --model path/to/weights.pt); no inference numbers reported. Synthetic proxies are not a substitute for YOLO — see README methodology.
+reid,reid_embed_8query_vs_32gallery_ms,1.058,1.141,1.191,1.195,944.807,,,,,,,,,,
+tracking,association_per_frame_ms,0.179,0.165,0.24,0.301,5572.128,,,,,,,,,,
+tracking,embedding_per_frame_ms,2.373,0.828,8.155,13.892,421.463,,,,,,,,,,
+tracking,live_tracks,,,,,,,,,,,,,,6,
+vision,detection_per_frame_ms,0.102,0.086,0.171,0.195,9797.22,,,,,,,,,,
+vision,embedding_per_frame_ms,12.649,2.086,49.814,67.536,79.06,,,,,,,,,,
+vision,association_per_frame_ms,0.25,0.25,0.306,0.318,3996.522,,,,,,,,,,
+vision,optical_flow_ms,16.745,16.562,17.569,17.884,59.72,,,,,,,,,,
+pipeline,end_to_end_ms,6.469,3.68,16.342,50.647,154.575,14.67,,,,,,2.22,2.17,,
+pipeline,ERROR,,,,,,,,,,,,,,,"PARTIAL: motion fallback, YOLO not benchmarked (informational only, not gate-eligible)"
+mapping3d,visual_odometry_two_view_ms,52.403,44.647,73.026,75.549,19.083,,,,,,,,,,
+mapping3d,pointcloud_voxel_hash_ms,7.538,7.372,8.246,8.323,132.668,,,,,,,,,,
+comms,mavlink_serialize,,,,,,,,2.85,,175.28,,,,,
+comms,mavlink_parse_crc,,,,,,,,2.78,,179.73,,,,,
+comms,loopback_udp_rtt_ms,0.501,0.217,1.158,3.21,1996.61,,,,,,,,,,
+comms,telemetry_process_ms,0.001,0.001,0.002,0.002,667740.34,,,,,,,,,,
+comms,sim_link_model_ms,13.319,10.855,28.66,40.543,75.082,,,,,,,,,,
+comms,ros2,,,,,,,,,,,,,,unavailable (rclpy not installed),
+integrated,alone,,,,,,,,,,,,,,,
+integrated,per_agent,,,,,,,,,,,,,,,
+integrated,concurrent_fps,,,,,,,,,,,,,,,
+integrated,fusion,,,,,,,,,,,,,,,
+integrated,note,,,,,,,,,,,,,,"realtime mode: bounded queues, paced inputs — drops/queue depth are the scaling signal. vs_alone_pct <100 = contention cost.",
+integrated,ERROR,,,,,,,,,,,,,,,"PARTIAL: fallback detector and/or synthetic pixels (informational, not gate-eligible)"
+thermal,sustained,,,,,,,,,21845.4,,,,,,
+thermal,throttling,,,,,,,,,,,,,,unknown,
+thermal,throttling_evidence,,,,,,,,,,,,,,insufficient telemetry (no GPU temp/clock sensors),
+backends,int8_tensor_alloc,,,,,,,,,,,,,,n/a (non-CUDA),
+backends,ERROR,,,,,,,,,,,,,,,no YOLO weights; backend matrix needs a model
+accuracy,ERROR,,,,,,,,,,,,,,,accuracy needs --model weights
+coldstart,ERROR,,,,,,,,,,,,,,,coldstart needs --model weights
+decode,decode_per_frame_ms,0.142,0.101,0.149,0.562,7035.583,,,,,,,,,,
+decode,ERROR,,,,,,,,,,,,,,,PARTIAL: generated H.264 clip (pass --video for FULL)
+matrix,iz320_b1_f15.0,,,13.017,54.663,,,,,,,,,2.17,,
+matrix,pruned_cells,,,,,,,,,,,,,,0,
+matrix,oom_boundary,,,,,,,,,,,,,,none found in sweep,
+matrix,ERROR,,,,,,,,,,,,,,,PARTIAL: at least one cell was not FULL evidence

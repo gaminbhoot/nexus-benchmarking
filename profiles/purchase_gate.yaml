@@ -1,0 +1,29 @@
+# NEXUS purchase gate: the exact acceptance question, not a vibe check.
+# Only FULL-status evidence counts. Missing evidence -> INCONCLUSIVE (never PASS).
+# Run: nexus-bench --profile profiles/purchase_gate.yaml --model <w.pt> --video <feed.mp4> --gate-strict
+profile_base: full
+modules: [system, coldstart, inference, backends, accuracy, pipeline, tracking, reid, decode, memory, integrated, thermal, comms]
+model: ""
+video: ""
+precision: fp16
+device: auto
+imgsz: 640
+batch: 1
+target_fps: 15.0
+integrated_mode: realtime
+duration_s: 60
+agent_frames: 60
+repeats: 30
+warmup: 5
+runs: 3
+req_fps: 15
+seed: 0
+gate:
+  req_fps: 15
+  workloads:
+    uav: {module: pipeline, min_fps: 15, max_p95_ms: 66.7, max_p99_ms: 120.0, max_miss_pct: 5.0, max_drop_pct: 5.0}
+    rover: {module: pipeline, min_fps: 15, max_p95_ms: 66.7, max_p99_ms: 120.0, max_miss_pct: 5.0, max_drop_pct: 5.0}
+    dual: {module: integrated, min_fps_each: 10.0, max_drop: 0, min_ticks: 10}
+  headroom: {min_fps_margin: 1.2, max_vram_occupied_pct: 85.0, max_miss_pct: 2.0}
+  resources: {forbid_throttle_likely: true, forbid_oom: true}
+  accuracy: {max_map_drop: 0.05}

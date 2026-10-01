@@ -1,4 +1,5 @@
 """Stats + feasibility correctness: the numbers must mean what they claim."""
+from nexus_bench import statuses as S
 from nexus_bench.stats import summarize
 from nexus_bench.report import _assess
 
@@ -33,8 +34,12 @@ def test_oom_exceeds():
     assert v == "exceeds limits"
 
 def test_no_workload_is_unsupported():
-    v, _ = _assess("p", _res({}, status="unsupported_no_weights"), 15)
+    v, _ = _assess("p", _res({}, status=S.UNSUPPORTED), 15)
     assert v == "unsupported"
+
+def test_partial_is_limited_not_ok():
+    v, why = _assess("p", _res({"t": {"median_ms": 30.0, "p95_ms": 50.0}}, status=S.PARTIAL), 15)
+    assert v == "limited" and any("PARTIAL" in r for r in why)
 
 def test_heavy_misses_exceed():
     v, _ = _assess("p", _res({"t": {"deadline_miss_pct": 40.0, "drop_pct": 5.0}}), 15)
