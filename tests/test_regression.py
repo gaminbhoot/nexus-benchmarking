@@ -527,6 +527,23 @@ def test_sustained_stop_flag(tmp_path, monkeypatch):
     assert all(v["stopped_early"] is True for v in per.values())
 
 
+# --- launcher file formats: CRLF+ASCII for cmd, LF for bash ---
+def test_launcher_line_endings_and_encoding():
+    """cmd.exe misparses LF-only batch files (instant-close with no pause);
+    bash chokes on CRLF. Non-ASCII in .bat breaks legacy codepages."""
+    import pathlib
+    for bat in ("NEXUS_Qualification.bat", "run_nexus_bench.bat"):
+        data = (pathlib.Path(bat)).read_bytes()
+        assert b"\r\n" in data, f"{bat} must use CRLF for cmd.exe"
+        lone_lf = data.replace(b"\r\n", b"").count(b"\n")
+        assert lone_lf == 0, f"{bat} has {lone_lf} LF-only lines (cmd parse hazard)"
+        assert all(b < 128 for b in data), f"{bat} must be pure ASCII"
+    for sh in ("NEXUS_Qualification.sh", "NEXUS_Qualification.command",
+               "run_nexus_bench.sh"):
+        data = (pathlib.Path(sh)).read_bytes()
+        assert b"\r" not in data, f"{sh} must be LF-only for bash"
+
+
 def test_report_and_summary_generate(tmp_path):
     from nexus_bench import report as R
     r = _passing_base()

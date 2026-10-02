@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 — Windows launcher that actually parses
+
+- Root cause of instant-close: LF-only batch files + fragile parenthesized
+  blocks. Launchers are now CRLF + pure ASCII in flat label/goto style
+  (locked by test); shell launchers stay LF.
+- Setup announces the ~2 GB download; broken venvs rebuild; exit codes propagate.
+
 ## 1.0.0 — first complete seller product
 
 - Midway stop: Ctrl+C kills the worker (nothing orphaned) and packages partial
