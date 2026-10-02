@@ -152,7 +152,9 @@ def _tree_hash(tree_dir):
     if not paths:
         return None
     for p in sorted(paths):
-        h.update(os.path.relpath(p, tree_dir).encode())
+        # Forward slashes always: os.path.relpath yields backslashes on
+        # Windows, which would fork the digest per OS (observed in CI).
+        h.update(os.path.relpath(p, tree_dir).replace(os.sep, "/").encode())
         h.update(sha256_file(p).encode())
     return h.hexdigest()
 

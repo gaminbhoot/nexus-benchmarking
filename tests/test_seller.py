@@ -147,6 +147,22 @@ def test_release_identity_needs_no_git(tmp_path, monkeypatch):
     assert m["release"]["qualification_version"] == "1.0"
 
 
+def test_tree_hash_is_separator_independent(tmp_path):
+    """The accuracy tree hash must be identical on Windows (\\) and POSIX (/).
+    os.path.relpath leaks the platform separator — normalize it, or CI forks."""
+    import hashlib
+    (tmp_path / "a.txt").write_bytes(b"x")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "b.txt").write_bytes(b"y")
+    from nexus_bench.assets import _tree_hash
+    native = _tree_hash(str(tmp_path))
+    h = hashlib.sha256()
+    for rel, body in (("a.txt", b"x"), ("sub/b.txt", b"y")):
+        h.update(rel.encode())
+        h.update(hashlib.sha256(body).hexdigest().encode())
+    assert native == h.hexdigest()
+
+
 def test_qualify_end_to_end_short(tmp_path, monkeypatch):
     pkg, manifest = _make_test_package(tmp_path)
     _patch_manifest(monkeypatch, pkg, manifest)
