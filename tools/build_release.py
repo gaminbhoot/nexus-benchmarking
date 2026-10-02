@@ -71,7 +71,7 @@ def build(root, outdir=None):
             elif os.path.exists(p):
                 z.write(p, top)
     digest = sha256_file(dest)
-    with open(dest + ".sha256", "w") as f:
+    with open(dest + ".sha256", "w", encoding="utf-8") as f:
         f.write(f"{digest}  {name}\n")
     print(f"built {dest}\nsha256: {digest}")
     return dest, digest

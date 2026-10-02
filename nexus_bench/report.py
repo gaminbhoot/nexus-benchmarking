@@ -125,7 +125,7 @@ def write_all(results, outdir, req_fps=15):
     jp.write_text(json.dumps(results, indent=2, default=str))
     rows = _flat(results)
     cp = out / f"results_{stamp}.csv"
-    with open(cp, "w", newline="") as f:
+    with open(cp, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["module", "test", "mean_ms", "median_ms",
                                           "p95_ms", "p99_ms", "throughput_ips",
                                           "throughput_fps", "per_image_ms", "total_ms",

@@ -32,7 +32,7 @@ MODULES = {"cpu": "nexus_bench.cpu_bench", "gpu": "nexus_bench.gpu_bench",
 def _load_profile(name_or_path, overrides):
     if os.path.isfile(name_or_path or ""):
         import yaml
-        with open(name_or_path) as f:
+        with open(name_or_path, encoding="utf-8") as f:
             doc = yaml.safe_load(f) or {}
         base = doc.pop("profile_base", "smoke")
         if base not in PROFILES:
@@ -99,7 +99,7 @@ def _run_worker(submod, cfg, timeout_s, cblas):
     with tempfile.TemporaryDirectory() as td:
         cfg_p = os.path.join(td, "cfg.json")
         out_p = os.path.join(td, "res.json")
-        with open(cfg_p, "w") as f:
+        with open(cfg_p, "w", encoding="utf-8") as f:
             json.dump(cfg, f, default=str)
         mon = Monitor()
         mon.__enter__()
@@ -117,7 +117,7 @@ def _run_worker(submod, cfg, timeout_s, cblas):
         mon.stop()
         tele = mon.summary()
         if os.path.exists(out_p):
-            with open(out_p) as f:
+            with open(out_p, encoding="utf-8") as f:
                 return json.load(f), tele
         return ({"module": submod, "status": S.FAILED, "tests": {},
                  "errors": [f"worker exited {proc.returncode} with no result file"]}, tele)
@@ -166,7 +166,7 @@ def main():
         gate_cfg.update(yaml_gate)
     if a.gate:
         import yaml
-        with open(a.gate) as f:
+        with open(a.gate, encoding="utf-8") as f:
             gate_cfg.update(yaml.safe_load(f) or {})
     gate_cfg["req_fps"] = a.req_fps
     cfg["gate_cfg_sha256"] = hashlib.sha256(

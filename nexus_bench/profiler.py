@@ -13,7 +13,7 @@ def _try(fn, default="unavailable"):
 def _cpu_brand():
     try:
         if os.path.exists("/proc/cpuinfo"):
-            with open("/proc/cpuinfo") as f:
+            with open("/proc/cpuinfo", encoding="utf-8") as f:
                 for line in f:
                     if line.startswith("model name"):
                         return line.split(":", 1)[1].strip()
@@ -52,9 +52,9 @@ def _system_model():
             pass
     try:
         if os.path.exists("/sys/devices/virtual/dmi/id/product_name"):
-            with open("/sys/devices/virtual/dmi/id/product_name") as f:
+            with open("/sys/devices/virtual/dmi/id/product_name", encoding="utf-8") as f:
                 prod = f.read().strip()
-            with open("/sys/devices/virtual/dmi/id/sys_vendor") as f:
+            with open("/sys/devices/virtual/dmi/id/sys_vendor", encoding="utf-8") as f:
                 vend = f.read().strip()
             return f"{vend} {prod}".strip()
     except Exception:

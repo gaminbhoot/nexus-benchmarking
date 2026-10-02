@@ -72,7 +72,7 @@ def _perf_mode():
         import os
         gov = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
         if os.path.exists(gov):
-            with open(gov) as f:
+            with open(gov, encoding="utf-8") as f:
                 return f"cpufreq:{f.read().strip()}"
     except Exception:
         pass

@@ -394,6 +394,24 @@ def test_runs_aggregate_nested_sustained():
     assert agg["tests"]["per_agent"]["uav"]["steady_fps"] == 9.0  # nested worst kept
     assert agg["tests"]["per_agent"]["uav"]["min_window_fps"] == 9.0
 
+# --- Windows-safe file I/O: every text open declares UTF-8 ---
+def test_all_text_opens_declare_encoding():
+    """Regression for the Windows cp1252 crash (Ultralytics yaml ships a UTF-8
+    emoji; locale-default decoding explodes). Binary opens excluded."""
+    import pathlib
+    import re
+    bad = []
+    for p in sorted(pathlib.Path("nexus_bench").glob("*.py")):
+        for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            if "open(" not in line or "Popen" in line or "os.path.abspath" in line:
+                continue
+            if re.search(r'"rb"|"wb"|\'rb\'', line):
+                continue
+            if "encoding=" not in line:
+                bad.append(f"{p.name}:{i}: {line.strip()}")
+    assert not bad, bad
+
+
 def test_report_and_summary_generate(tmp_path):
     from nexus_bench import report as R
     r = _passing_base()

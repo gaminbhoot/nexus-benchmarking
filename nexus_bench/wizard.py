@@ -110,7 +110,7 @@ def run_wizard():
                 "sustained_duration_s": minutes * 60, "runs": 1,
                 "out": "NEXUS_Qualification_reports"})
     try:
-        with open("profiles/purchase_gate.yaml") as f:
+        with open("profiles/purchase_gate.yaml", encoding="utf-8") as f:
             import yaml
             doc = yaml.safe_load(f) or {}
             gate_cfg = dict(gate_mod.DEFAULT_GATE)
@@ -186,20 +186,20 @@ def package_results(paths, results, parent="."):
     for k, name in mapping.items():
         if paths.get(k) and os.path.exists(paths[k]):
             shutil.copy(paths[k], os.path.join(folder, name))
-    with open(os.path.join(folder, "provenance.json"), "w") as f:
+    with open(os.path.join(folder, "provenance.json"), "w", encoding="utf-8") as f:
         import json
         json.dump(results.get("_provenance", {}), f, indent=2, default=str)
     for key, name in (("_assets", "asset_manifest.json"),):
         if results.get(key) is not None:
-            with open(os.path.join(folder, name), "w") as f:
+            with open(os.path.join(folder, name), "w", encoding="utf-8") as f:
                 json.dump(results[key], f, indent=2, default=str)
     qman = {"generated_utc": stamp,
             "qualification_version": results.get("_assets", {}).get("qualification_version", "?"),
             "modules": sorted(k for k in results if not k.startswith("_") and isinstance(results[k], dict)),
             "verdict": (results.get("_gate") or {}).get("verdict", "?")}
-    with open(os.path.join(folder, "qualification_manifest.json"), "w") as f:
+    with open(os.path.join(folder, "qualification_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(qman, f, indent=2, default=str)
-    with open(os.path.join(folder, "qualification_summary.txt"), "w") as f:
+    with open(os.path.join(folder, "qualification_summary.txt"), "w", encoding="utf-8") as f:
         f.write(report_mod.plain_summary(results))
     zipp = folder + ".zip"
     with zipfile.ZipFile(zipp, "w", zipfile.ZIP_DEFLATED) as z:

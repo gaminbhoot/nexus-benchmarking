@@ -13,7 +13,7 @@ from nexus_bench import statuses as S
 
 def main():
     mod_name, cfg_path, out_path = sys.argv[1], sys.argv[2], sys.argv[3]
-    with open(cfg_path) as f:
+    with open(cfg_path, encoding="utf-8") as f:
         cfg = json.load(f)
     try:
         dotted = mod_name if mod_name.startswith("nexus_bench.") else f"nexus_bench.{mod_name}"
@@ -46,7 +46,7 @@ def main():
 def _write(path, res):
     import os
     tmp = path + ".tmp"
-    with open(tmp, "w") as f:
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(res, f, default=str)
     os.replace(tmp, path)
 

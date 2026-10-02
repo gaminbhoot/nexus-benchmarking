@@ -59,10 +59,10 @@ def official_config(root, duration_s, out_dir):
         import ultralytics
         bundled = os.path.join(os.path.dirname(ultralytics.__file__),
                                "cfg", "datasets", "coco8.yaml")
-        with open(bundled) as f:
+        with open(bundled, encoding="utf-8") as f:
             data = _yaml.safe_load(f)
         data["path"] = paths["accuracy_dir"]
-        with open(acc_yaml, "w") as f:
+        with open(acc_yaml, "w", encoding="utf-8") as f:
             _yaml.safe_dump(data, f)
     cfg.update({"model": paths["model"], "uav_video": paths["uav_video"],
                 "rover_video": paths["rover_video"], "video": paths["uav_video"],
@@ -78,7 +78,7 @@ def official_config(root, duration_s, out_dir):
 def official_gate(root):
     from nexus_bench import gate as G
     import yaml
-    with open(os.path.join(root or ".", "profiles", "purchase_gate.yaml")) as f:
+    with open(os.path.join(root or ".", "profiles", "purchase_gate.yaml"), encoding="utf-8") as f:
         doc = yaml.safe_load(f) or {}
     gate_cfg = dict(G.DEFAULT_GATE)
     gate_cfg.update(doc.get("gate", {}))
@@ -282,10 +282,10 @@ def _abort_package(out_parent, stage, message, say, extra=None):
     stamp = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     folder = os.path.join(out_parent, f"NEXUS_Qualification_{stamp}_ABORTED")
     os.makedirs(folder, exist_ok=True)
-    with open(os.path.join(folder, "errors.log"), "w") as f:
+    with open(os.path.join(folder, "errors.log"), "w", encoding="utf-8") as f:
         f.write(f"stage: {stage}\n{message}\nRESULT: ABORTED\nNo qualification PASS was issued.\n")
     if extra:
-        with open(os.path.join(folder, "results.json"), "w") as f:
+        with open(os.path.join(folder, "results.json"), "w", encoding="utf-8") as f:
             json.dump(extra, f, indent=2, default=str)
     import zipfile
     zipp = folder + ".zip"

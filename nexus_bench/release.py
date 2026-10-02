@@ -20,7 +20,7 @@ def release_path(root=None):
 
 def read_release(root=None):
     try:
-        with open(release_path(root)) as f:
+        with open(release_path(root), encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return None

@@ -70,7 +70,7 @@
     "leak_threshold_mb": 300,
     "throttle_temp_c": 83,
     "req_fps": 15,
-    "out": "/tmp/yb_sample4",
+    "out": "/tmp/yb_sample5",
     "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7"
   },
   "_provenance": {
@@ -94,7 +94,7 @@
       "built_utc": "2026-10-02T07:18:02Z"
     },
     "source_state": "packaged release",
-    "timestamp_utc": "2026-10-02T07:18:03Z",
+    "timestamp_utc": "2026-10-02T07:30:15Z",
     "python": "3.14.7",
     "platform": "Darwin 27.0.0 (arm64)",
     "packages": {
@@ -116,11 +116,11 @@
       "val_data": "none"
     },
     "model_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
-    "config_sha256": "0c171253b430642a812d0b5c0a1308e2668cb4bd5978f456deb961bb2e4abc4f",
+    "config_sha256": "cf992d284990cae69430162004f11d8ebf0ac4466db745b7bcace7c76779d901",
     "gate_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
     "power": {
       "ac": false,
-      "battery_pct": 90
+      "battery_pct": 89
     }
   },
   "_power": {
@@ -140,7 +140,7 @@
         "how": "measured"
       },
       "battery_pct": {
-        "value": 90,
+        "value": 89,
         "how": "measured"
       },
       "battery_state": {
@@ -202,7 +202,7 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample4",
+      "out": "/tmp/yb_sample5",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps"
     },
@@ -224,7 +224,7 @@
             "how": "measured"
           },
           "battery_pct": {
-            "value": 90,
+            "value": 89,
             "how": "measured"
           },
           "battery_state": {
@@ -311,7 +311,7 @@
         {
           "check": "memory",
           "pass": true,
-          "detail": "9.6 GB available",
+          "detail": "9.9 GB available",
           "critical": true
         },
         {
@@ -331,33 +331,33 @@
     "errors": [],
     "status": "FULL",
     "telemetry": {
-      "n": 3,
+      "n": 2,
       "cpu_pct": {
-        "mean": 9.4,
-        "max": 18.6
+        "mean": 0.0,
+        "max": 0.0
       },
       "ram_pct": {
-        "mean": 62.63,
-        "max": 62.7
+        "mean": 61.1,
+        "max": 61.4
       },
       "proc_rss_mb": {
-        "mean": 386.1,
-        "max": 511.3
+        "mean": 349.95,
+        "max": 475.0
       }
     },
     "controller_telemetry": {
-      "n": 5,
+      "n": 4,
       "cpu_pct": {
-        "mean": 10.94,
-        "max": 20.5
+        "mean": 8.82,
+        "max": 16.3
       },
       "ram_pct": {
-        "mean": 62.56,
-        "max": 62.7
+        "mean": 61.02,
+        "max": 61.5
       },
       "proc_rss_mb": {
-        "mean": 310.08,
-        "max": 310.1
+        "mean": 310.8,
+        "max": 310.8
       }
     }
   },
@@ -394,7 +394,7 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample4",
+      "out": "/tmp/yb_sample5",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps",
       "deadline_ms": 66.67,
@@ -408,12 +408,12 @@
     "tests": {
       "end_to_end_ms": {
         "n": 119,
-        "mean_ms": 43.321701658874,
-        "median_ms": 14.505147933959961,
-        "p95_ms": 282.57205486297573,
-        "p99_ms": 566.8652582168575,
-        "stdev_ms": 110.06487237147276,
-        "throughput_ips": 23.083119122934093,
+        "mean_ms": 42.68639628626719,
+        "median_ms": 14.612913131713867,
+        "p95_ms": 274.3395090103146,
+        "p99_ms": 560.7268190383907,
+        "stdev_ms": 108.68258331918392,
+        "throughput_ips": 23.42666720548893,
         "accounting": {
           "generated": 121,
           "acquired": 121,
@@ -434,15 +434,15 @@
         "drop_pct": 1.65,
         "deadline_miss_pct": 7.56,
         "stage_means_ms": {
-          "resize": 0.446,
-          "detect": 18.521,
+          "resize": 0.374,
+          "detect": 18.386,
           "embed": 0.001,
           "associate": 0.003,
-          "telemetry": 0.004
+          "telemetry": 0.005
         },
-        "acquire_mean_ms": 0.495,
-        "queue_wait_mean_ms": 24.332,
-        "processing_mean_ms": 18.977,
+        "acquire_mean_ms": 0.574,
+        "queue_wait_mean_ms": 23.904,
+        "processing_mean_ms": 18.771,
         "replay_count": 0,
         "source_duration_s": 20.0
       }
@@ -452,31 +452,31 @@
     "telemetry": {
       "n": 16,
       "cpu_pct": {
-        "mean": 8.06,
-        "max": 12.2
+        "mean": 7.54,
+        "max": 16.7
       },
       "ram_pct": {
-        "mean": 62.46,
-        "max": 62.7
+        "mean": 61.5,
+        "max": 61.8
       },
       "proc_rss_mb": {
-        "mean": 583.77,
-        "max": 614.1
+        "mean": 584.09,
+        "max": 613.2
       }
     },
     "controller_telemetry": {
       "n": 18,
       "cpu_pct": {
-        "mean": 8.43,
-        "max": 12.5
+        "mean": 8.29,
+        "max": 16.8
       },
       "ram_pct": {
-        "mean": 62.38,
-        "max": 62.6
+        "mean": 61.44,
+        "max": 61.9
       },
       "proc_rss_mb": {
-        "mean": 310.1,
-        "max": 310.1
+        "mean": 310.89,
+        "max": 310.9
       }
     }
   },
@@ -513,7 +513,7 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample4",
+      "out": "/tmp/yb_sample5",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps",
       "sustained_s": 8,
@@ -522,13 +522,13 @@
     },
     "tests": {
       "windows_ips": [
-        191.98
+        191.1
       ],
       "steady": {
-        "burst_ips": 191.98,
-        "steady_median_ips": 191.98,
-        "min_window_ips": 191.98,
-        "final_window_ips": 191.98,
+        "burst_ips": 191.1,
+        "steady_median_ips": 191.1,
+        "min_window_ips": 191.1,
+        "final_window_ips": 191.1,
         "burst_steady_ratio": 1.0,
         "degradation_pct": 0.0
       },
@@ -543,8 +543,8 @@
       ],
       "sustained": {
         "seconds": 8.0,
-        "iters": 1541,
-        "avg_ips": 192.51
+        "iters": 1536,
+        "avg_ips": 191.9
       },
       "throttling": "none_detected",
       "throttling_evidence": "no windowed degradation"
@@ -554,31 +554,31 @@
     "telemetry": {
       "n": 8,
       "cpu_pct": {
-        "mean": 8.99,
-        "max": 11.0
+        "mean": 8.71,
+        "max": 10.5
       },
       "ram_pct": {
-        "mean": 62.45,
-        "max": 62.7
+        "mean": 61.26,
+        "max": 61.5
       },
       "proc_rss_mb": {
-        "mean": 579.95,
-        "max": 580.1
+        "mean": 579.36,
+        "max": 579.6
       }
     },
     "controller_telemetry": {
       "n": 19,
       "cpu_pct": {
-        "mean": 9.78,
-        "max": 11.2
+        "mean": 10.21,
+        "max": 17.4
       },
       "ram_pct": {
-        "mean": 62.32,
-        "max": 62.5
+        "mean": 61.15,
+        "max": 61.3
       },
       "proc_rss_mb": {
-        "mean": 310.1,
-        "max": 310.1
+        "mean": 310.9,
+        "max": 310.9
       }
     }
   },
@@ -615,17 +615,17 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample4",
+      "out": "/tmp/yb_sample5",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps"
     },
     "tests": {
-      "ram_alloc_touch_16mb_gbps": 4.66,
-      "ram_alloc_touch_64mb_gbps": 22.34,
-      "ram_alloc_touch_256mb_gbps": 22.7,
+      "ram_alloc_touch_16mb_gbps": 4.98,
+      "ram_alloc_touch_64mb_gbps": 24.92,
+      "ram_alloc_touch_256mb_gbps": 22.77,
       "ram_total_gb": 25.77,
       "vram_note": "VRAM ladder probed on CUDA only",
-      "proc_peak_rss_mb": 225.1
+      "proc_peak_rss_mb": 224.5
     },
     "errors": [],
     "status": "FULL",
@@ -636,27 +636,27 @@
         "max": 0.0
       },
       "ram_pct": {
-        "mean": 61.8,
-        "max": 61.8
+        "mean": 60.5,
+        "max": 60.5
       },
       "proc_rss_mb": {
-        "mean": 225.1,
-        "max": 225.1
+        "mean": 224.5,
+        "max": 224.5
       }
     },
     "controller_telemetry": {
       "n": 3,
       "cpu_pct": {
-        "mean": 6.53,
-        "max": 11.9
+        "mean": 6.6,
+        "max": 11.7
       },
       "ram_pct": {
-        "mean": 62.23,
-        "max": 62.7
+        "mean": 60.9,
+        "max": 61.4
       },
       "proc_rss_mb": {
-        "mean": 310.1,
-        "max": 310.1
+        "mean": 310.9,
+        "max": 310.9
       }
     }
   },
@@ -693,41 +693,41 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample4",
+      "out": "/tmp/yb_sample5",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7"
     },
     "tests": {
       "mavlink_serialize": {
         "msgs": 500,
-        "total_ms": 2.93,
-        "kmsgs_per_s": 170.58,
+        "total_ms": 3.04,
+        "kmsgs_per_s": 164.57,
         "bytes_per_msg": 21
       },
       "mavlink_parse_crc": {
         "msgs": 500,
-        "total_ms": 2.86,
-        "kmsgs_per_s": 174.94,
+        "total_ms": 2.93,
+        "kmsgs_per_s": 170.93,
         "corruption_rejected": true
       },
       "loopback_udp_rtt_ms": {
         "n": 500,
-        "mean_ms": 0.4880105480006023,
-        "median_ms": 0.20231250073265983,
-        "p95_ms": 1.2166952008556087,
-        "p99_ms": 3.260652921053405,
-        "stdev_ms": 2.6593302707519095,
-        "throughput_ips": 2049.136036294785,
+        "mean_ms": 0.48899949596307124,
+        "median_ms": 0.2059795006061904,
+        "p95_ms": 1.3259291511531042,
+        "p99_ms": 2.9590075003216043,
+        "stdev_ms": 2.60516813040828,
+        "throughput_ips": 2044.9918829272556,
         "unit": "ms RTT, UDP loopback (stack cost, not link latency)",
         "lost": 0
       },
       "telemetry_process_ms": {
         "n": 500,
-        "mean_ms": 0.0013428699421638157,
+        "mean_ms": 0.0013256060519779567,
         "median_ms": 0.0012500004231696948,
-        "p95_ms": 0.001541999154142104,
-        "p99_ms": 0.0018758297301246778,
-        "stdev_ms": 0.0005585047353648279,
-        "throughput_ips": 744673.7532814706
+        "p95_ms": 0.0015000005078036338,
+        "p99_ms": 0.0018749997252598405,
+        "stdev_ms": 0.00044312539863180123,
+        "throughput_ips": 754371.9331304237
       },
       "sim_link_model_ms": {
         "n": 500,
@@ -746,31 +746,31 @@
     "telemetry": {
       "n": 4,
       "cpu_pct": {
-        "mean": 6.12,
-        "max": 9.9
+        "mean": 3.75,
+        "max": 8.3
       },
       "ram_pct": {
-        "mean": 61.52,
-        "max": 61.6
+        "mean": 60.27,
+        "max": 60.4
       },
       "proc_rss_mb": {
-        "mean": 168.17,
+        "mean": 168.2,
         "max": 216.7
       }
     },
     "controller_telemetry": {
       "n": 6,
       "cpu_pct": {
-        "mean": 7.07,
-        "max": 12.4
+        "mean": 7.2,
+        "max": 12.6
       },
       "ram_pct": {
-        "mean": 61.57,
-        "max": 61.7
+        "mean": 60.32,
+        "max": 60.4
       },
       "proc_rss_mb": {
-        "mean": 310.13,
-        "max": 310.2
+        "mean": 310.9,
+        "max": 310.9
       }
     }
   },
@@ -793,13 +793,13 @@
       {
         "check": "uav.p95_ms<=66.7",
         "pass": false,
-        "detail": "282.57205486297573<=66.7",
+        "detail": "274.3395090103146<=66.7",
         "kind": "measured"
       },
       {
         "check": "uav.p99_ms<=120.0",
         "pass": false,
-        "detail": "566.8652582168575<=120.0",
+        "detail": "560.7268190383907<=120.0",
         "kind": "measured"
       },
       {
@@ -829,13 +829,13 @@
       {
         "check": "rover.p95_ms<=66.7",
         "pass": false,
-        "detail": "282.57205486297573<=66.7",
+        "detail": "274.3395090103146<=66.7",
         "kind": "measured"
       },
       {
         "check": "rover.p99_ms<=120.0",
         "pass": false,
-        "detail": "566.8652582168575<=120.0",
+        "detail": "560.7268190383907<=120.0",
         "kind": "measured"
       },
       {
@@ -937,7 +937,7 @@
     }
   },
   "_meta": {
-    "timestamp_utc": "20261002_071829",
+    "timestamp_utc": "20261002_073041",
     "req_fps": 15,
     "feasibility": {
       "preflight": "ok",
@@ -951,7 +951,7 @@
         "p95 within 66.7ms deadline; misses/drops <5%"
       ],
       "pipeline": [
-        "end_to_end_ms: p95 282.6ms > deadline 66.7ms",
+        "end_to_end_ms: p95 274.3ms > deadline 66.7ms",
         "deadline-miss 7.56% / drops 1.65%",
         "measured 14.74 FPS vs required 15 FPS"
       ],
@@ -984,13 +984,13 @@
         {
           "check": "uav.p95_ms<=66.7",
           "pass": false,
-          "detail": "282.57205486297573<=66.7",
+          "detail": "274.3395090103146<=66.7",
           "kind": "measured"
         },
         {
           "check": "uav.p99_ms<=120.0",
           "pass": false,
-          "detail": "566.8652582168575<=120.0",
+          "detail": "560.7268190383907<=120.0",
           "kind": "measured"
         },
         {
@@ -1020,13 +1020,13 @@
         {
           "check": "rover.p95_ms<=66.7",
           "pass": false,
-          "detail": "282.57205486297573<=66.7",
+          "detail": "274.3395090103146<=66.7",
           "kind": "measured"
         },
         {
           "check": "rover.p99_ms<=120.0",
           "pass": false,
-          "detail": "566.8652582168575<=120.0",
+          "detail": "560.7268190383907<=120.0",
           "kind": "measured"
         },
         {
@@ -1148,7 +1148,7 @@
         "built_utc": "2026-10-02T07:18:02Z"
       },
       "source_state": "packaged release",
-      "timestamp_utc": "2026-10-02T07:18:03Z",
+      "timestamp_utc": "2026-10-02T07:30:15Z",
       "python": "3.14.7",
       "platform": "Darwin 27.0.0 (arm64)",
       "packages": {
@@ -1170,11 +1170,11 @@
         "val_data": "none"
       },
       "model_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
-      "config_sha256": "0c171253b430642a812d0b5c0a1308e2668cb4bd5978f456deb961bb2e4abc4f",
+      "config_sha256": "cf992d284990cae69430162004f11d8ebf0ac4466db745b7bcace7c76779d901",
       "gate_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "power": {
         "ac": false,
-        "battery_pct": 90
+        "battery_pct": 89
       }
     },
     "method": "tail-latency + deadline-miss + drop-rate + measured throughput vs required FPS; medians never decide alone"

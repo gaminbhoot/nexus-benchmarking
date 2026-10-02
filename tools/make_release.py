@@ -33,7 +33,7 @@ def main():
         "built_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     os.makedirs(os.path.join(root, "release"), exist_ok=True)
-    with open(R.release_path(root), "w") as f:
+    with open(R.release_path(root), "w", encoding="utf-8") as f:
         json.dump(rel, f, indent=2)
     print(json.dumps(rel, indent=2))
 
