@@ -28,6 +28,22 @@ def _check(name, cond, detail, checks, kind="measured"):
     checks.append({"check": name, "pass": bool(cond), "detail": detail, "kind": kind})
     return bool(cond)
 
+def _check_num(checks, name, value, threshold, want):
+    """Numeric gate with explicit missing-evidence semantics.
+    want='ge': value>=threshold passes. want='le': value<=threshold passes.
+    A missing (None) value is kind='missing' -> INCONCLUSIVE, never a
+    fabricated PASS (default 0 would pass '<=' checks) or FAIL."""
+    if value is None or isinstance(value, bool):
+        checks.append({"check": name, "pass": False,
+                       "detail": f"{name} not measured (missing evidence)",
+                       "kind": "missing"})
+        return False
+    ok = (value >= threshold) if want == "ge" else (value <= threshold)
+    op = ">=" if want == "ge" else "<="
+    checks.append({"check": name, "pass": bool(ok),
+                   "detail": f"{value}{op}{threshold}", "kind": "measured"})
+    return bool(ok)
+
 def _eligible(res):
     return isinstance(res, dict) and res.get("status") in S.GATE_ELIGIBLE
 
@@ -46,18 +62,15 @@ def evaluate(results, gate=None):
         sus_per = ((sus.get("tests") or {}).get("per_agent") or {}).get(wname) \
             if _eligible(sus) else None
         if sus_per is not None:
-            fps = sus_per.get("steady_fps", 0) or 0
             _check(f"{wname}.evidence_sustained", True, "sustained FULL per-agent", checks,
                    kind="measured")
-            overall &= _check(f"{wname}.fps>={crit.get('min_fps', req)}", fps >= crit.get("min_fps", req),
-                              f"sustained steady {fps} fps", checks)
-            p95 = sus_per.get("max_p95_ms")
-            overall &= _check(f"{wname}.max_p95_ms<={crit.get('max_p95_ms', 1e9)}",
-                              p95 is not None and p95 <= crit.get("max_p95_ms", 1e9),
-                              f"sustained worst-window p95 {p95}ms", checks)
-            overall &= _check(f"{wname}.max_drop_pct<={crit.get('max_drop_pct', 100)}",
-                              (sus_per.get("max_window_drop_pct", 0) or 0) <= crit.get("max_drop_pct", 100),
-                              f"worst-window drop {sus_per.get('max_window_drop_pct')}%", checks)
+            overall &= _check_num(checks, f"{wname}.fps>={crit.get('min_fps', req)}",
+                                  sus_per.get("steady_fps"), crit.get("min_fps", req), "ge")
+            overall &= _check_num(checks, f"{wname}.max_p95_ms<={crit.get('max_p95_ms', 1e9)}",
+                                  sus_per.get("max_p95_ms"), crit.get("max_p95_ms", 1e9), "le")
+            overall &= _check_num(checks, f"{wname}.max_drop_pct<={crit.get('max_drop_pct', 100)}",
+                                  sus_per.get("max_window_drop_pct"),
+                                  crit.get("max_drop_pct", 100), "le")
             continue
         ok = _eligible(res)
         _check(f"{wname}.evidence_full", ok,
@@ -66,18 +79,14 @@ def evaluate(results, gate=None):
             overall = False
             continue
         t = (res.get("tests") or {}).get("end_to_end_ms", {})
-        fps = t.get("throughput_fps") or 0
-        overall &= _check(f"{wname}.fps>={crit.get('min_fps', req)}", fps >= crit.get("min_fps", req),
-                          f"{fps} fps", checks)
+        overall &= _check_num(checks, f"{wname}.fps>={crit.get('min_fps', req)}",
+                              t.get("throughput_fps"), crit.get("min_fps", req), "ge")
         for key, lim in (("p95_ms", "max_p95_ms"), ("p99_ms", "max_p99_ms")):
-            v = t.get(key)
-            c = _check(f"{wname}.{key}<={crit.get(lim, 1e9)}",
-                       v is not None and v <= crit.get(lim, 1e9), f"{v}ms", checks)
-            overall &= c
+            overall &= _check_num(checks, f"{wname}.{key}<={crit.get(lim, 1e9)}",
+                                  t.get(key), crit.get(lim, 1e9), "le")
         for key, lim in (("deadline_miss_pct", "max_miss_pct"), ("drop_pct", "max_drop_pct")):
-            v = t.get(key, 0)
-            overall &= _check(f"{wname}.{key}<={crit.get(lim, 100)}", v <= crit.get(lim, 100),
-                              f"{v}%", checks)
+            overall &= _check_num(checks, f"{wname}.{key}<={crit.get(lim, 100)}",
+                                  t.get(key), crit.get(lim, 100), "le")
 
     dc = w.get("dual", {})
     res = results.get("integrated", {})
@@ -88,17 +97,20 @@ def evaluate(results, gate=None):
     else:
         per = (res.get("tests") or {}).get("per_agent", {})
         for agent in ("uav", "rover"):
-            fps = (per.get(agent) or {}).get("fps", 0)
-            overall &= _check(f"dual.{agent}.fps>={dc.get('min_fps_each', 10)}",
-                              fps >= dc.get("min_fps_each", 10),
-                              f"{fps} fps", checks)
-            drops = (per.get(agent) or {}).get("drops", 0)
-            overall &= _check(f"dual.{agent}.drops<={dc.get('max_drop', 0)}",
-                              drops is not None and drops <= dc.get("max_drop", 0),
-                              f"{drops}", checks)
-        ticks = ((res.get("tests") or {}).get("fusion") or {}).get("ticks", 0)
-        overall &= _check(f"dual.fusion_ticks>={dc.get('min_ticks', 10)}",
-                          ticks >= dc.get("min_ticks", 10), f"{ticks}", checks)
+            a = per.get(agent) or {}
+            overall &= _check_num(checks, f"dual.{agent}.fps>={dc.get('min_fps_each', 10)}",
+                                  a.get("fps"), dc.get("min_fps_each", 10), "ge")
+            if a.get("drops") is None:
+                _check(f"dual.{agent}.drops", False,
+                       "drop count not measured (missing evidence)", checks, kind="missing")
+                overall = False
+            else:
+                overall &= _check(f"dual.{agent}.drops<={dc.get('max_drop', 0)}",
+                                  a["drops"] <= dc.get("max_drop", 0),
+                                  f"{a['drops']}", checks)
+        overall &= _check_num(checks, f"dual.fusion_ticks>={dc.get('min_ticks', 10)}",
+                              ((res.get("tests") or {}).get("fusion") or {}).get("ticks"),
+                              dc.get("min_ticks", 10), "ge")
 
     # --- sustained qualification (preferred evidence over burst runs) ---
     sus = results.get("sustained", {})
@@ -107,54 +119,73 @@ def evaluate(results, gate=None):
         per = ((sus.get("tests") or {}).get("per_agent") or {})
         for agent in ("uav", "rover"):
             a = per.get(agent) or {}
-            fps = a.get("steady_fps", a.get("final_fps", 0)) or 0
-            overall &= _check(f"sustained.{agent}.steady_fps>={sc.get('min_fps_each', 10)}",
-                              fps >= sc.get("min_fps_each", 10), f"{fps} fps", checks)
+            overall &= _check_num(checks, f"sustained.{agent}.steady_fps>={sc.get('min_fps_each', 10)}",
+                                  a.get("steady_fps", a.get("final_fps")), sc.get("min_fps_each", 10), "ge")
             # Worst windows decide, never the median alone.
-            overall &= _check(f"sustained.{agent}.min_window_fps>={sc.get('min_fps_each', 10)}",
-                              (a.get("min_window_fps", 0) or 0) >= sc.get("min_fps_each", 10),
-                              f"worst window {a.get('min_window_fps')} fps", checks)
-            overall &= _check(f"sustained.{agent}.final_window_fps>={sc.get('min_fps_each', 10)}",
-                              (a.get("final_window_fps", 0) or 0) >= sc.get("min_fps_each", 10),
-                              f"final window {a.get('final_window_fps')} fps", checks)
-            overall &= _check(f"sustained.{agent}.max_window_p95<={sc.get('max_p95_ms', 1e9)}",
-                              a.get("max_p95_ms") is not None and
-                              a.get("max_p95_ms") <= sc.get("max_p95_ms", 1e9),
-                              f"worst window p95 {a.get('max_p95_ms')}ms", checks)
+            overall &= _check_num(checks, f"sustained.{agent}.min_window_fps>={sc.get('min_fps_each', 10)}",
+                                  a.get("min_window_fps"), sc.get("min_fps_each", 10), "ge")
+            overall &= _check_num(checks, f"sustained.{agent}.final_window_fps>={sc.get('min_fps_each', 10)}",
+                                  a.get("final_window_fps"), sc.get("min_fps_each", 10), "ge")
+            overall &= _check_num(checks, f"sustained.{agent}.max_window_p95<={sc.get('max_p95_ms', 1e9)}",
+                                  a.get("max_p95_ms"), sc.get("max_p95_ms", 1e9), "le")
             if sc.get("max_p99_ms") is not None:
-                overall &= _check(f"sustained.{agent}.max_window_p99<={sc.get('max_p99_ms')}",
-                                  a.get("max_window_p99_ms") is not None and
-                                  a.get("max_window_p99_ms") <= sc.get("max_p99_ms"),
-                                  f"worst window p99 {a.get('max_window_p99_ms')}ms", checks)
-            overall &= _check(f"sustained.{agent}.drop_pct<={sc.get('max_drop_pct', 5)}",
-                              (a.get("drop_pct", 0) or 0) <= sc.get("max_drop_pct", 5),
-                              f"{a.get('drop_pct')}%", checks)
-            overall &= _check(f"sustained.{agent}.max_window_drop<={sc.get('max_drop_pct', 5)}",
-                              (a.get("max_window_drop_pct", 0) or 0) <= sc.get("max_drop_pct", 5),
-                              f"worst window {a.get('max_window_drop_pct')}%", checks)
-            overall &= _check(f"sustained.{agent}.max_window_miss<={sc.get('max_miss_pct', 5)}",
-                              (a.get("max_window_miss_pct", 0) or 0) <= sc.get("max_miss_pct", 5),
-                              f"worst window {a.get('max_window_miss_pct')}%", checks)
-            overall &= _check(f"sustained.{agent}.degradation<={sc.get('max_degradation_pct', 15)}",
-                              (a.get("degradation_pct", 0) or 0) <= sc.get("max_degradation_pct", 15),
-                              f"{a.get('degradation_pct')}%", checks)
-            overall &= _check(f"sustained.{agent}.no_workload_oom",
-                              not a.get("oom_events"), f"oom={a.get('oom_events')}", checks)
+                overall &= _check_num(checks, f"sustained.{agent}.max_window_p99<={sc.get('max_p99_ms')}",
+                                      a.get("max_window_p99_ms"), sc.get("max_p99_ms"), "le")
+            overall &= _check_num(checks, f"sustained.{agent}.drop_pct<={sc.get('max_drop_pct', 5)}",
+                                  a.get("drop_pct"), sc.get("max_drop_pct", 5), "le")
+            overall &= _check_num(checks, f"sustained.{agent}.max_window_drop<={sc.get('max_drop_pct', 5)}",
+                                  a.get("max_window_drop_pct"), sc.get("max_drop_pct", 5), "le")
+            overall &= _check_num(checks, f"sustained.{agent}.max_window_miss<={sc.get('max_miss_pct', 5)}",
+                                  a.get("max_window_miss_pct"), sc.get("max_miss_pct", 5), "le")
+            overall &= _check_num(checks, f"sustained.{agent}.degradation<={sc.get('max_degradation_pct', 15)}",
+                                  a.get("degradation_pct"), sc.get("max_degradation_pct", 15), "le")
+            if a.get("oom_events"):
+                overall &= _check(f"sustained.{agent}.no_workload_oom", False,
+                                  f"WORKLOAD_OOM x{a['oom_events']} (veto)", checks)
+            else:
+                _check(f"sustained.{agent}.no_workload_oom", a.get("oom_events") == 0,
+                       f"oom={a.get('oom_events')}", checks,
+                       kind="missing" if a.get("oom_events") is None else "measured")
+                if a.get("oom_events") is None:
+                    overall = False
             # Duration proof: actual execution, not configured intent.
-            overall &= _check(f"sustained.{agent}.actual_duration",
-                              a.get("duration_complete") is True,
-                              f"actual {a.get('actual_duration_s')}s vs requested "
-                              f"{a.get('requested_duration_s')}s", checks)
-            overall &= _check(f"sustained.{agent}.conservation",
-                              a.get("conservation_ok") is True,
-                              "frame accounting conserved" if a.get("conservation_ok") is True
-                              else "frame accounting FAILED — drops cannot be trusted", checks)
+            if a.get("duration_complete") is not True:
+                overall &= _check(f"sustained.{agent}.actual_duration", False,
+                                  f"actual {a.get('actual_duration_s')}s vs requested "
+                                  f"{a.get('requested_duration_s')}s (missing/incomplete)", checks,
+                                  kind="missing")
+            else:
+                _check(f"sustained.{agent}.actual_duration", True,
+                       f"actual {a.get('actual_duration_s')}s", checks)
+            if a.get("conservation_ok") is not True:
+                overall &= _check(f"sustained.{agent}.conservation", False,
+                                  "frame accounting missing/FAILED — drops cannot be trusted",
+                                  checks, kind="missing" if a.get("conservation_ok") is None else "measured")
+            else:
+                _check(f"sustained.{agent}.conservation", True, "frame accounting conserved", checks)
+        # Fusion contract: the coordination layer must keep up too.
+        fus = ((sus.get("tests") or {}).get("fusion") or {})
+        dur = (sus.get("config") or {}).get("duration_s") or (sus.get("config") or {}).get("sustained_duration_s")
+        ticks = fus.get("ticks")
+        if ticks is None or dur is None:
+            overall &= _check("sustained.fusion_rate", False,
+                              "fusion ticks/duration not measured (missing evidence)",
+                              checks, kind="missing")
+        else:
+            overall &= _check_num(checks, "sustained.fusion_ticks_per_s>=1.0",
+                                  round(ticks / dur, 2) if dur else None, 1.0, "ge")
+            overall &= _check_num(checks, "sustained.fusion_tick_p95_ms<=100.0",
+                                  (fus.get("tick_ms") or {}).get("p95_ms"), 100.0, "le")
         dur = (sus.get("config") or {}).get("duration_s", 0)
         min_dur = sc.get("min_duration_s", 600)
         overall &= _check(f"sustained.duration>={min_dur}",
                           dur >= min_dur, f"{dur}s", checks)
         mg = ((sus.get("tests") or {}).get("memory_growth") or {})
-        if mg.get("leak_suspected"):
+        if not mg:
+            overall &= _check("sustained.no_leak", False,
+                              "memory trajectory not measured (missing evidence)",
+                              checks, kind="missing")
+        elif mg.get("leak_suspected"):
             overall &= _check("sustained.no_leak", False,
                               f"RSS growth {mg.get('growth')}MB (leak suspected)", checks)
         else:
@@ -212,14 +243,19 @@ def evaluate(results, gate=None):
                           checks)
         want_vram = exp.get("min_vram_gb")
         if want_vram:
-            total = None
+            total_gb = None
             try:
                 total = float(str((prof.get("gpu") or {}).get("vram_total", "")).split()[0])
                 total_gb = total / 1024.0
             except Exception:
                 total_gb = None
-            overall &= _check("hardware.vram_class", total_gb is not None and total_gb >= want_vram - 0.5,
-                              f"tested {total_gb}GB vs expected >={want_vram}GB", checks)
+            if total_gb is None:
+                overall &= _check("hardware.vram_class", False,
+                                  "VRAM size not detectable (missing evidence)", checks,
+                                  kind="missing")
+            else:
+                overall &= _check("hardware.vram_class", total_gb >= want_vram - 0.5,
+                                  f"tested {total_gb}GB vs expected >={want_vram}GB", checks)
 
     # provenance: dirty tree policy + power coverage honesty.
     prov = results.get("_provenance", {}) or {}
@@ -252,12 +288,13 @@ def evaluate(results, gate=None):
     def _dep_id(res):
         c = (res.get("config") or {})
         fp = ((results.get("_provenance") or {}).get("fingerprints") or {}).get("model", "?")
-        eff = c.get("effective_precision") or c.get("precision", {}).get("requested", "?") \
-            if isinstance(c.get("precision"), dict) else c.get("precision", "?")
-        be = c.get("resolved_device", "?")
-        return (f"model={str(fp)[:12]} backend={be} prec={eff} "
+        eff = c.get("effective_precision") or (
+            c.get("precision", {}).get("requested") if isinstance(c.get("precision"), dict)
+            else c.get("precision", "?"))
+        eng = c.get("deployment_engine", c.get("resolved_device", "?"))
+        return (f"model={str(fp)[:12]} engine=[{eng}] prec={eff} "
                 f"imgsz={c.get('imgsz', '?')} batch={c.get('batch', '?')}")
-    dep_ids = {m: _dep_id(results[m]) for m in ("inference", "sustained", "accuracy", "backends")
+    dep_ids = {m: _dep_id(results[m]) for m in ("inference", "sustained", "accuracy")
                if isinstance(results.get(m), dict) and _eligible(results[m])}
     if len(set(dep_ids.values())) > 1:
         overall &= _check("deployment.identity_match", False,

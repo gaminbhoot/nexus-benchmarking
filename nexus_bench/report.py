@@ -262,11 +262,25 @@ def _summary_rows(results):
     wl = crit.get("workloads", {}) or {}
     rows = []
 
-    def row(metric, result, limit, ok):
-        rows.append((metric, result, limit, "PASS" if ok else "FAIL"))
-
-    def chk(prefix):
-        return checks.get(next((k for k in checks if k.startswith(prefix)), ""), {})
+    def row(metric, result, limit, check_prefixes):
+        """4-state row: PASS / FAIL / INCONCLUSIVE (criterion exists, evidence
+        missing) / NOT TESTED (no criterion ran). Never red for missing data."""
+        c = None
+        if isinstance(check_prefixes, str):
+            check_prefixes = (check_prefixes,)
+        for prefix in check_prefixes:
+            c = checks.get(next((k for k in checks if k.startswith(prefix)), ""), None)
+            if c:
+                break
+        if c is None:
+            status = "NOT TESTED"
+        elif not c.get("pass") and c.get("kind") == "missing":
+            status = "INCONCLUSIVE"
+        else:
+            status = "PASS" if c.get("pass") else "FAIL"
+        color = {"PASS": "green", "FAIL": "red"}.get(status, "#b26a00")
+        rows.append((metric, result, limit,
+                     f"<span style='font-weight:bold;color:{color}'>{status}</span>"))
 
     sus = (results.get("sustained", {}) or {}).get("tests", {}) or {}
     per = sus.get("per_agent", {}) or {}
@@ -274,41 +288,46 @@ def _summary_rows(results):
         a = per.get(agent) or {}
         lim = sus_crit.get("min_fps_each", 10)
         row(f"{agent.upper()} steady FPS", a.get("steady_fps", "—"), f">={lim}",
-            chk(f"sustained.{agent}.steady_fps").get("pass", False))
+            f"sustained.{agent}.steady_fps")
         dlim = sus_crit.get("max_drop_pct", 5)
         dv = a.get("drop_pct")
         row(f"{agent.upper()} drops", f"{dv}%" if dv is not None else "—", f"<={dlim}%",
-            chk(f"sustained.{agent}.drop_pct").get("pass", dv is not None and dv <= dlim))
+            f"sustained.{agent}.drop_pct")
     pipe = ((results.get("pipeline", {}) or {}).get("tests", {}) or {}).get("end_to_end_ms", {}) or {}
     if pipe:
         plim = (wl.get("uav", {}) or {}).get("max_p95_ms", 66.7)
         pv = pipe.get("p95_ms")
         row("Pipeline p95", f"{pv} ms" if pv is not None else "—", f"<={plim} ms",
-            pv is not None and pv <= plim)
+            ("uav.p95_ms", "uav.max_p95_ms"))
+    else:
+        row("Pipeline p95", "—", "—", "no.such.check")
     evo = sus.get("resource_evolution", {}) or {}
     vram = (evo.get("vram_pct") or {}) if isinstance(evo.get("vram_pct"), dict) else {}
     if vram.get("max") is not None:
         vlim = (crit.get("headroom", {}) or {}).get("max_vram_occupied_pct", 85)
-        row("Peak VRAM", f"{vram['max']}%", f"<={vlim}%",
-            chk("resources.vram_headroom").get("pass", vram["max"] <= vlim))
+        row("Peak VRAM", f"{vram['max']}%", f"<={vlim}%", "resources.vram_headroom")
+    else:
+        row("Peak VRAM", "—", "—", "resources.vram_headroom")
     tmp = (evo.get("gpu_temp_c") or {}) if isinstance(evo.get("gpu_temp_c"), dict) else {}
     if tmp.get("max") is not None:
-        row("Max GPU temp", f"{tmp['max']} C", "no throttle evidence",
-            ((results.get("thermal", {}) or {}).get("tests", {}) or {}).get("throttling") == "none_detected")
+        row("Max GPU temp", f"{tmp['max']} C", "no throttle evidence", "resources.no_throttle")
+    else:
+        row("Max GPU temp", "—", "—", "resources.no_throttle")
     comp = ((results.get("accuracy", {}) or {}).get("tests", {}) or {}).get("map_comparison", {}) or {}
     if comp.get("map50_drop_abs") is not None:
         alim = (crit.get("accuracy", {}) or {}).get("max_map_drop", 0.05)
         row("Accuracy drop (mAP50)", comp["map50_drop_abs"], f"<={alim}",
-            chk("accuracy.map50_drop_abs").get("pass", comp["map50_drop_abs"] <= alim))
+            "accuracy.map50_drop_abs")
+    else:
+        row("Accuracy drop (mAP50)", "—", "—", "accuracy.map50_drop_abs")
     ooms = sum((a.get("oom_events") or 0) for a in per.values() if isinstance(a, dict))
-    row("Workload OOMs", ooms, "0", ooms == 0)
+    row("Workload OOMs", ooms, "0", "resources.no_oom")
     if per:
         actual = min((a.get("actual_duration_s") or 0) for a in per.values() if isinstance(a, dict))
         req = (results.get("sustained", {}) or {}).get("config", {}).get("sustained_duration_s", "?")
         row("Actual sustained duration", f"{actual} s", f">={req} s",
-            isinstance(req, (int, float)) and actual >= req - 1.0)
-    return "".join(f"<tr><td>{m}</td><td>{r}</td><td>{l}</td>"
-                   f"<td style='font-weight:bold;color:{'green' if s == 'PASS' else 'red'}'>{s}</td></tr>"
+            "sustained.uav.actual_duration")
+    return "".join(f"<tr><td>{m}</td><td>{r}</td><td>{l}</td><td>{s}</td></tr>"
                    for m, r, l, s in rows)
 
 def _deployment_block(results):

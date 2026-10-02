@@ -43,3 +43,29 @@ def gate_sha(root=None):
             h.update(os.path.basename(p).encode())
             h.update(f.read())
     return h.hexdigest()
+
+def verify_runtime(root=None):
+    """Verify the packaged release BEFORE any qualification runs.
+
+    Checks: current source tree == release benchmark_source_sha256,
+    current profiles == release gate_sha256, current asset manifest ==
+    release asset_manifest_sha256. Any mismatch => the package was modified
+    after release stamping (or hand-assembled) and must NOT qualify.
+    Returns (ok, [problems]). No release.json => developer tree (no claim).
+    """
+    rel = read_release(root)
+    if rel is None:
+        return True, ["no release.json: developer tree, no release claim made"]
+    problems = []
+    if source_tree_sha(root) != rel.get("benchmark_source_sha256"):
+        problems.append("benchmark source differs from release manifest "
+                        "(code modified after release stamping)")
+    if gate_sha(root) != rel.get("gate_sha256"):
+        problems.append("gate/profile files differ from release manifest "
+                        "(official qualification profile was modified)")
+    msha = hashlib.sha256(json.dumps(
+        __import__("nexus_bench.assets", fromlist=["x"]).OFFICIAL_MANIFEST,
+        sort_keys=True).encode()).hexdigest()
+    if msha != rel.get("asset_manifest_sha256"):
+        problems.append("asset manifest differs from release manifest")
+    return (not problems), problems

@@ -17,6 +17,10 @@ OFFICIAL_MODULES = ["preflight", "coldstart", "inference", "backends", "accuracy
                     "pipeline", "tracking", "reid", "decode", "memory",
                     "integrated", "thermal", "comms", "sustained"]
 
+# Authoritative process exit codes (report stays human-facing, code is machine-facing).
+VERDICT_EXIT = {"PASS": 0, "PASS_WITH_HEADROOM": 0, "FAIL": 2,
+                "INCONCLUSIVE": 3, "ABORTED": 4}
+
 PLAIN_STEPS = {
     "preflight": "Pre-flight check", "coldstart": "Measuring startup time",
     "inference": "Testing AI detection speed", "backends": "Testing AI backends",
@@ -49,10 +53,17 @@ def official_config(root, duration_s, out_dir):
     cfg = get("full")
     acc_yaml = os.path.join(paths["assets_dir"], "accuracy", "coco8.yaml")
     if not os.path.exists(acc_yaml):
+        # Real COCO class names from the installed ultralytics coco8, repointed
+        # at the verified bundled tree (absolute path, deterministic content).
+        import yaml as _yaml
+        import ultralytics
+        bundled = os.path.join(os.path.dirname(ultralytics.__file__),
+                               "cfg", "datasets", "coco8.yaml")
+        with open(bundled) as f:
+            data = _yaml.safe_load(f)
+        data["path"] = os.path.join(paths["accuracy_dir"], "coco8")
         with open(acc_yaml, "w") as f:
-            f.write(f"path: {os.path.join(paths['accuracy_dir'], 'coco8')}\n"
-                    f"train: images/train\nval: images/val\n"
-                    f"nc: 80\nnames: [{', '.join(f'{i}' for i in range(80))}]\n")
+            _yaml.safe_dump(data, f)
     cfg.update({"model": paths["model"], "uav_video": paths["uav_video"],
                 "rover_video": paths["rover_video"], "video": paths["uav_video"],
                 "val_data": acc_yaml, "precision": "fp16", "device": "auto",
@@ -116,6 +127,22 @@ def run_qualify(root=None, extended=False, assume_yes=False, out_parent=".",
     say("=" * 55)
     say("This application automatically tests this computer against the")
     say("official NEXUS workload. No files need to be selected.")
+    from nexus_bench import release as R
+    dev_override = os.environ.get("NEXUS_DEV") == "1"
+    rel_ok, rel_problems = (True, ["developer override NEXUS_DEV=1: release identity "
+                                   "checked but not enforced"]) if dev_override else R.verify_runtime(root)
+    rel = None if dev_override else R.read_release(root)
+    if rel is not None:
+        if not rel_ok:
+            return _abort_package(out_parent, "release-integrity",
+                                  "QUALIFICATION INVALID — this package differs from the "
+                                  "official release it claims to be.\n" +
+                                  "\n".join(f"- {p}" for p in rel_problems) +
+                                  "\nNo qualification result was produced.", say)
+        say(f"\nRelease: NEXUS Qualification v{rel.get('qualification_version', '?')} "
+            f"({rel.get('release_id', '?')}) — identity verified.")
+    else:
+        say("\nDistribution: developer tree (no release stamp; release checks skipped).")
     prof = profiler.profile()
     gpu, mem, cpu = prof.get("gpu", {}), prof.get("memory", {}), prof.get("cpu", {})
     say("")
@@ -128,9 +155,11 @@ def run_qualify(root=None, extended=False, assume_yes=False, out_parent=".",
     say("\nOfficial test package:")
     try:
         paths, records = A.ensure_all(root, progress=lambda *a: None)
+        A.ensure_accuracy_tree(root)
         for r in records:
             nm = r["asset_id"].rsplit("-", 1)[0].split("nexus-qual-")[-1]
             say(f"  {nm:.<22} VERIFIED")
+        say("  accuracy tree........ VERIFIED")
     except A.AssetError as e:
         return _abort_package(out_parent, "assets",
                               "The official NEXUS test files could not be prepared.\n"

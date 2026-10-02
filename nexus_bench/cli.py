@@ -132,10 +132,11 @@ def main():
         from nexus_bench.wizard import run_wizard
         return run_wizard()
     if mods == ["qualify"] or mods == ["qualify-extended"]:
-        from nexus_bench.qualify import run_qualify
-        run_qualify(extended=(mods == ["qualify-extended"] or a.extended),
-                    assume_yes=a.yes)
-        return 0
+        from nexus_bench.qualify import run_qualify, VERDICT_EXIT
+        _folder, _zipp, _results = run_qualify(
+            extended=(mods == ["qualify-extended"] or a.extended),
+            assume_yes=a.yes)
+        return VERDICT_EXIT.get((_results.get("_gate") or {}).get("verdict"), 3)
     for m in mods:
         if m not in MODULES:
             print(f"unknown module {m!r}; choose from {sorted(MODULES)}", file=sys.stderr)

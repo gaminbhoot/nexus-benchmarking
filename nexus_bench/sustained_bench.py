@@ -34,7 +34,7 @@ from nexus_bench.stats import summarize
 from nexus_bench.stream import PacedSource, drop_pct
 from nexus_bench.tracking_bench import Tracker
 from nexus_bench.vision_bench import _motion_detections
-from nexus_bench.yolo_util import check_effective
+from nexus_bench.yolo_util import check_effective, deployment_engine
 
 LIMITATIONS = [
     "rover depth network: NOT TESTED (occupancy-grid proxy in the rover agent)",
@@ -48,6 +48,19 @@ def _windowize(events, t0, window_s, duration_s):
         i = min(int((t - t0) // window_s), int(duration_s // window_s))
         wins.setdefault(i, []).append(v)
     return wins
+
+def _window_drops(gen_times, events, t0, window_s, duration_s):
+    """True per-window drops from actual timestamps. Returns (drop_w, gen_w).
+    gen_times: wall times of generated frames. events: [(t_wall, e2e)]."""
+    n = max(1, int(duration_s // window_s))
+    drop_w, gen_w = [], []
+    for i in range(n):
+        lo, hi = t0 + i * window_s, t0 + (i + 1) * window_s
+        g = sum(1 for t in gen_times if lo <= t < hi)
+        dv = sum(1 for t, _ in events if lo <= t < hi)
+        gen_w.append(g)
+        drop_w.append(round(100 * (g - dv) / g, 2) if g else None)
+    return drop_w, gen_w
 
 def _series_stats(windows, duration_s, window_s, agg):
     n = max(1, int(duration_s // window_s))
@@ -165,7 +178,9 @@ def _agent(name, width, do_obstacle, ctx, embed_model, dev, cfg, tele_q, stats,
                   "oom_events": ooms, "conservation": src.acct.check_conservation(),
                   "replay_count": src.replay_count,
                   "source_duration_s": src.source_duration_s,
-                  "actual_duration_s": round(time.time() - t_agent0, 1)})
+                  "actual_duration_s": round(time.time() - t_agent0, 1),
+                  "gen_times": src.gen_times,
+                  "producer_drop_times": src.producer_drop_times})
 
 def run(cfg):
     dev = resolve_device(cfg.get("device", "auto"))
@@ -179,6 +194,7 @@ def run(cfg):
            "config": {**cfg, "resolved_device": dev, "duration_s": duration_s,
                       "window_s": window_s, "target_fps": target_fps,
                       "concurrency_model": concurrency,
+                      "deployment_engine": deployment_engine(dev),
                       "deadline_ms": round(deadline_ms, 2),
                       "limitations": LIMITATIONS,
                       "drop_definition": "drop_pct = 100*(generated-delivered)/generated"},
@@ -288,12 +304,12 @@ def run(cfg):
                         return round(float(np.percentile(wv, 99)), 2)
                     return round(max(wv), 2)  # short window: worst sample IS the tail
                 p99_w = [_p99(wins.get(i, [])) for i in range(n)]
-                miss_w, drop_w = [], []
+                miss_w, drop_w, gen_w = [], [], []
                 for i in range(n):
                     wv = wins.get(i, [])
                     miss_w.append(round(100 * sum(1 for v in wv if v > deadline_ms) / len(wv), 2) if wv else None)
-                    gen_i = a["generated"] // n  # paced evenly; producer drops spread uniformly
-                    drop_w.append(round(100 * max(0, gen_i - len(wv)) / gen_i, 2) if gen_i else None)
+                drop_w, gen_w = _window_drops(s.get("gen_times", []), s["events"],
+                                              t0, window_s, duration_s)
                 lat_all = [v for w in wins.values() for v in w]
                 d = summarize(lat_all) if lat_all else {"n": 0}
                 d["windows_fps"] = fps_w
@@ -301,6 +317,7 @@ def run(cfg):
                 d["windows_p99_ms"] = p99_w
                 d["windows_miss_pct"] = miss_w
                 d["windows_drop_pct"] = drop_w
+                d["windows_generated"] = gen_w
                 d["initial_fps"] = fps_w[0]
                 steady = _st.median([f for f in fps_w[1:] if f is not None]) if len(fps_w) > 1 else fps_w[0]
                 d["steady_fps"] = round(steady or 0, 2)
@@ -346,16 +363,16 @@ def run(cfg):
             out["tests"]["queue_depth_max_per_window"] = qw
             out["tests"]["fusion"] = {"ticks": fusion_ticks[0],
                                       "tick_ms": summarize([v for _, v in fusion_events])}
-            # resource evolution from monitor samples (VRAM/temp/power over time)
+            # Resource windows align to SUSTAINED_START (t0), not to the first
+            # monitor sample (which includes worker startup/model load/warmup).
             evo = {}
             for key in ("vram_pct", "gpu_temp_c", "gpu_clock_mhz", "gpu_power_w",
                         "gpu_util_pct", "cpu_temp_c", "ram_pct", "proc_rss_mb"):
-                pts = [(s["t"], s[key]) for s in mon.samples if key in s]
+                pts = [(s["t"], s[key]) for s in mon.samples if key in s and s["t"] >= t0]
                 if not pts:
                     evo[key] = None
                     continue
-                t_start = pts[0][0]
-                wins = _windowize(pts, t_start, window_s, duration_s)
+                wins = _windowize(pts, t0, window_s, duration_s)
                 import statistics as _st
                 med = _series_stats(wins, duration_s, window_s, _st.median)
                 vals = [v for _, v in pts]
@@ -365,6 +382,9 @@ def run(cfg):
                 evo[key] = {"initial": round(first, 2), "max": round(max(vals), 2),
                             "final": round(last, 2), "per_window": med}
             out["tests"]["resource_evolution"] = evo
+            out["tests"]["window_marks"] = {
+                "sustained_start_wall": t0, "sustained_end_wall": time.time(),
+                "note": "all windows align to SUSTAINED_START; startup/load/warmup excluded"}
             rss = evo.get("proc_rss_mb") or {}
             growth = _growth(rss.get("initial"), rss.get("final"),
                              cfg.get("leak_threshold_mb", 300))

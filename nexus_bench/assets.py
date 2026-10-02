@@ -47,7 +47,7 @@ OFFICIAL_MANIFEST = {
          "version": "1.0", "type": "dataset", "filename": "accuracy/coco8.zip",
          "size": 443158,
          "sha256": "54c67fe9ef88313e021ec0e92b73c200167bb0a86633e8df8658d832cca828c9",
-         "tree_sha256": "c8e785febb43a131ca8db8f8be6dc4b71613407abb0c7f8cb8851adf0f563f75",
+         "tree_sha256": "c6067211ef3d17647bc873aca7398a80d0a7a7da42e8e30e357bf4db9cfaa33e",
          "source": COCO8_URL,
          "purpose": "official labelled accuracy data (real labels, real mAP)"},
     ],
@@ -137,6 +137,41 @@ def bootstrap(root=None, progress=None):
         bad = [r for r in records if r["status"] != "OK"]
         raise AssetError(f"assets still unverified after bootstrap: {bad}")
     return records
+
+def _tree_hash(tree_dir):
+    h = hashlib.sha256()
+    paths = []
+    for r, _, fs in os.walk(tree_dir):
+        for fn in fs:
+            paths.append(os.path.join(r, fn))
+    if not paths:
+        return None
+    for p in sorted(paths):
+        h.update(os.path.relpath(p, tree_dir).encode())
+        h.update(sha256_file(p).encode())
+    return h.hexdigest()
+
+def ensure_accuracy_tree(root=None):
+    """The extracted validation tree must exist AND match the pinned tree hash.
+    Extracts from the verified ZIP when needed (rigorously verified B)."""
+    import zipfile
+    adir = assets_dir(root)
+    acc = next(a for a in OFFICIAL_MANIFEST["assets"] if a["type"] == "dataset")
+    tree = os.path.join(adir, "accuracy", "coco8")
+    want = acc.get("tree_sha256")
+    if _tree_hash(tree) == want:
+        return tree
+    zipp = os.path.join(adir, acc["filename"])
+    if not (os.path.exists(zipp) and sha256_file(zipp) == acc["sha256"]):
+        raise AssetError("accuracy ZIP missing/unverified — cannot build validation set")
+    import shutil
+    if os.path.isdir(tree):
+        shutil.rmtree(tree)
+    with zipfile.ZipFile(zipp) as z:
+        z.extractall(os.path.join(adir, "accuracy"))
+    if _tree_hash(tree) != want:
+        raise AssetError("extracted accuracy tree failed hash — refusing to qualify")
+    return tree
 
 def ensure_all(root=None, progress=None):
     """Verify; bootstrap if anything is missing; verify again. Raises AssetError

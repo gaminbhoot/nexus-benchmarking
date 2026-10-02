@@ -67,7 +67,7 @@ def manifest(cfg):
     git = _git()
     try:
         from nexus_bench import release as R
-        rel = R.read_release()
+        rel = None if os.environ.get("NEXUS_DEV") == "1" else R.read_release()
     except Exception:
         rel = None
     if rel:

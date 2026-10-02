@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.6.0 — immutable seller appliance
+
+- Release system: `tools/build_release.py` assembles versioned self-contained
+  `dist/NEXUS-Qualification-<platform>-vX.zip` (+ published SHA-256); runtime
+  verifies source/gate/asset-manifest hashes before any qualification runs
+  (tampered package → QUALIFICATION INVALID); profile modification detected via
+  gate hash. `NEXUS_DEV=1` keeps developers unblocked.
+- True per-window drops from generation/delivery timestamps (uniform-spread
+  assumption removed; regression test proves a collapsing window can't hide).
+- Gate missing-evidence audit: new `_check_num` helper — absent metrics yield
+  INCONCLUSIVE, never fabricated PASS/FAIL; fusion contract (ticks/s, tick p95),
+  actual-duration proof, conservation, leak-trajectory, power/battery, hardware
+  identity, deployment identity (now with engine/provider/runtime versions).
+- Report rows carry PASS/FAIL/INCONCLUSIVE/NOT TESTED individually; summary
+  limits sourced from gate criteria; deployment identity, asset verification,
+  LIMITATIONS, version stamps, duration proof sections.
+- Accuracy tree bundled + hash-verified (extract-from-verified-ZIP fallback).
+- Pipeline uses measured wall time; sustained resources align to SUSTAINED_START.
+- `qualify` exit codes authoritative (0/2/3/4); preflight module; power section
+  with AC prompt; pre/post sanity + recovery evidence.
+- Docs split: seller `README_FIRST.txt` + short README vs `docs/DEVELOPER.md`;
+  wizard explicitly developer-only. CI (pytest × 3 OS + release integrity).
+  96 tests green.
+
 ## 0.5.0 — plug-and-play qualification product
 
 - Seller appliance (`nexus-bench qualify`, launchers `NEXUS_Qualification.*`):

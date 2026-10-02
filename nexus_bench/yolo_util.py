@@ -24,6 +24,26 @@ def ultralytics_version():
     except Exception:
         return None
 
+def deployment_engine(dev="auto"):
+    """Exact execution engine identity: framework + provider + runtime versions.
+    PyTorch CUDA and ONNX CUDA both run 'on cuda' — this string tells them apart."""
+    import torch
+    parts = [f"pytorch-{torch.__version__}"]
+    try:
+        if dev == "cuda" and torch.cuda.is_available():
+            parts.append(f"provider=CUDA(cuda{torch.version.cuda or '?'},"
+                         f"cudnn={torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else 'n/a'})")
+        else:
+            parts.append(f"provider={dev}")
+    except Exception:
+        parts.append(f"provider={dev}?")
+    try:
+        import tensorrt
+        parts.append(f"tensorrt={getattr(tensorrt, '__version__', '?')}")
+    except Exception:
+        pass
+    return " ".join(parts)
+
 def precision_kwargs(want_fp16):
     """Flag for this install's ultralytics. Raises RuntimeError if unknown."""
     if not want_fp16:

@@ -42,6 +42,7 @@ def _passing_base():
                           "actual_duration_s": 600, "requested_duration_s": 600,
                           "duration_complete": True}},
             "memory_growth": {"growth": 10.0, "leak_suspected": False},
+            "fusion": {"ticks": 1200, "tick_ms": {"p95_ms": 5.0}},
             "resource_evolution": {
                 "vram_pct": {"initial": 60.0, "max": 70.0, "final": 65.0},
                 "gpu_temp_c": {"initial": 60.0, "max": 75.0, "final": 70.0,
@@ -294,7 +295,72 @@ def test_accuracy_map_comparison_shape():
     assert _drop(0.5, 0.48) == {"abs": 0.02, "rel": 0.04}
 
 
-# --- report + summary generation ---
+# --- deployment identity mismatch ---
+def test_deployment_identity_mismatch_fails():
+    import copy
+    r = _passing_base()
+    r2 = copy.deepcopy(r)
+    r2["accuracy"]["config"]["precision"] = "int8"
+    g = G.evaluate(r2)
+    assert g["verdict"] in (S.FAIL, S.INCONCLUSIVE)
+    assert any(c["check"] == "deployment.identity_match" and not c["pass"]
+               for c in g["checks"])
+
+
+# --- fusion contract missing ---
+def test_missing_fusion_is_not_pass():
+    import copy
+    r = _passing_base()
+    r2 = copy.deepcopy(r)
+    del r2["sustained"]["tests"]["fusion"]
+    r2["sustained"]["tests"]["per_agent"]["uav"]["steady_fps"] = 16.0
+    g = G.evaluate(r2)
+    assert g["verdict"] in (S.FAIL, S.INCONCLUSIVE)
+    assert any(c["check"] == "sustained.fusion_rate" and not c["pass"]
+               for c in g["checks"])
+
+
+# --- release tamper detection ---
+def test_release_tamper_detected(tmp_path):
+    import json
+    from nexus_bench import release as R
+    (tmp_path / "profiles").mkdir()
+    (tmp_path / "profiles" / "a.yaml").write_text("x: 1\n")
+    (tmp_path / "nexus_bench").mkdir()
+    (tmp_path / "nexus_bench" / "m.py").write_text("x=1\n")
+    (tmp_path / "release").mkdir()
+    (tmp_path / "release" / "release.json").write_text(json.dumps({
+        "benchmark_source_sha256": "0" * 64, "gate_sha256": "1" * 64,
+        "asset_manifest_sha256": "2" * 64}))
+    ok, problems = R.verify_runtime(str(tmp_path))
+    assert not ok and len(problems) == 3
+
+
+# --- qualify exit codes are authoritative ---
+def test_qualify_exit_codes():
+    from nexus_bench.qualify import VERDICT_EXIT
+    assert VERDICT_EXIT == {"PASS": 0, "PASS_WITH_HEADROOM": 0, "FAIL": 2,
+                            "INCONCLUSIVE": 3, "ABORTED": 4}
+
+
+# --- report rows carry 4 states ---
+def test_report_rows_four_states(tmp_path):
+    from nexus_bench import report as R
+    r = _passing_base()
+    del r["accuracy"]["tests"]["map_comparison"]  # sole evidence gone
+    results = dict(r, _profile={"cpu": {"brand": "X"}, "gpu": {"name": "G"},
+                                "memory": {"ram_total_gb": 16}},
+                   _config={"req_fps": 15, "duration_s": 600, "seed": 0},
+                   _provenance={"git": {"sha": "a", "dirty": False},
+                                "fingerprints": {"model": "abc123"}},
+                   _power={"signals": {"ac_connected": {"value": True, "how": "measured"}}})
+    results["_gate"] = G.evaluate({k: v for k, v in results.items() if "__run" not in k})
+    assert results["_gate"]["verdict"] == S.INCONCLUSIVE  # missing, not failed hardware
+    paths = R.write_all(results, tmp_path, req_fps=15)
+    import pathlib
+    html = pathlib.Path(paths["html"]).read_text()
+    assert "INCONCLUSIVE" in html  # missing metric must not render red FAIL
+    assert "Accuracy drop" in html
 def test_report_and_summary_generate(tmp_path):
     from nexus_bench import report as R
     r = _passing_base()

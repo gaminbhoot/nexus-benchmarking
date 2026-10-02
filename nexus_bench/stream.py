@@ -83,6 +83,9 @@ class PacedSource:
         self.loop = loop
         self.replay_count = 0
         self.source_duration_s = None  # measured span of one pass (video only)
+        self.gen_times = []            # wall time of every generated frame
+        self.producer_drop_times = []  # wall time of every producer drop
+        self.t_start_wall = None
         self._stop = threading.Event()
         self._thread = None
         self._exhausted = threading.Event()
@@ -167,6 +170,7 @@ class PacedSource:
     def _produce(self):
         period = 1.0 / self.target_fps
         t0 = time.perf_counter()
+        self.t_start_wall = time.time()
         it = self._frames()
         while not self._stop.is_set():
             ta = time.perf_counter()
@@ -187,11 +191,13 @@ class PacedSource:
                     "t_decode_done": ta + decode_ms / 1000.0,
                     "t_capture": time.time(),
                     "t_enqueue": time.time()}
+            self.gen_times.append(time.time())
             try:
                 self.q.put_nowait((frame, meta))
                 self.acct.enqueued += 1
             except queue.Full:
                 self.acct.producer_drops += 1
+                self.producer_drop_times.append(time.time())
         self._exhausted.set()
 
     def start(self):

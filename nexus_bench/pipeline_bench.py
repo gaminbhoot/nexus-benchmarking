@@ -118,7 +118,9 @@ def run(cfg):
                 except Exception:
                     src.acct.processing_failures += 1
             src.stop()
-            wall_s = src.acct.generated / target_fps if src.acct.generated else 0
+            # Measured wall time: producer start to consumer end — never inferred
+            # from configured FPS (that would hide overload by construction).
+            wall_measured = time.time() - (src.t_start_wall or time.time())
             conserved, books = src.acct.check_conservation()
             if not conserved:
                 out["errors"].append(f"accounting violation (investigate): {books}")
@@ -135,8 +137,11 @@ def run(cfg):
             d = summarize(e2e)
             d["accounting"] = a
             d["conservation_ok"] = conserved
-            d["input_fps"] = round(a["generated"] / wall_s, 2) if wall_s else 0
-            d["throughput_fps"] = round(a["delivered"] / wall_s, 2) if wall_s else 0
+            wall_paced = a["generated"] / target_fps if a["generated"] else 0
+            d["input_fps"] = round(a["generated"] / wall_measured, 2) if wall_measured else 0
+            d["throughput_fps"] = round(a["delivered"] / wall_measured, 2) if wall_measured else 0
+            d["wall_measured_s"] = round(wall_measured, 2)
+            d["wall_paced_s"] = round(wall_paced, 2)
             d["drop_pct"] = drop_pct(a["generated"], a["delivered"])
             d["deadline_miss_pct"] = round(100 * n_miss / a["delivered"], 2) if a["delivered"] else 0
             d["stage_means_ms"] = {k: round(sum(v) / len(v), 3) for k, v in by_stage.items() if v}

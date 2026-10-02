@@ -11,7 +11,7 @@ from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.profiles import resolve_device
 from nexus_bench.stats import summarize
-from nexus_bench.yolo_util import check_effective, load_weights, precision_kwargs
+from nexus_bench.yolo_util import check_effective, deployment_engine, load_weights, precision_kwargs
 
 def _synthetic_batch(h, w, batch, seed=0):
     rng = np.random.default_rng(seed)
@@ -29,7 +29,8 @@ def run(cfg):
     imgszs, batches = _grid(cfg)
     out = {"module": "inference",
            "config": {**cfg, "resolved_device": dev, "imgsz_list": imgszs,
-                      "batch_list": batches},
+                      "batch_list": batches,
+                      "deployment_engine": deployment_engine(dev)},
            "tests": {}, "errors": [], "status": S.FULL}
     if not model_path or not os.path.exists(model_path):
         out["status"] = S.UNSUPPORTED

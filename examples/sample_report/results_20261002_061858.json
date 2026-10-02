@@ -2,6 +2,7 @@
   "_profile": {
     "os": "Darwin 27.0.0 (arm64)",
     "kernel": "Darwin Kernel Version 27.0.0: Tue Aug 11 21:06:40 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T6050",
+    "system_model": "Mac17,9",
     "python": "3.14.7",
     "cpu": {
       "brand": "Apple M5 Pro",
@@ -15,7 +16,7 @@
     },
     "storage": {
       "total_gb": 994.6,
-      "free_gb": 712.9
+      "free_gb": 712.8
     },
     "gpu": {
       "vendor": "unavailable (no nvidia-smi)",
@@ -69,21 +70,21 @@
     "leak_threshold_mb": 300,
     "throttle_temp_c": 83,
     "req_fps": 15,
-    "out": "/tmp/yb_sample2",
+    "out": "/tmp/yb_sample3",
     "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7"
   },
   "_provenance": {
     "benchmark": "nexus-benchmarking",
-    "benchmark_version": "0.5.0",
+    "benchmark_version": "0.6.0",
     "git": {
-      "sha": "7512919e293de052033be897407bde7d3ea8875a",
+      "sha": "d1207cf061e53a31c3a100752fbef626cd545a92",
       "dirty": true,
       "root": "/Users/jay/Documents/Projects/nexus-benchmarking"
     },
     "distribution": "dev-git",
     "release": null,
     "source_state": "UNRELEASED / DIRTY SOURCE \u2014 results not reproducible from commit alone",
-    "timestamp_utc": "2026-10-02T05:29:16Z",
+    "timestamp_utc": "2026-10-02T06:18:31Z",
     "python": "3.14.7",
     "platform": "Darwin 27.0.0 (arm64)",
     "packages": {
@@ -105,7 +106,7 @@
       "val_data": "none"
     },
     "model_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
-    "config_sha256": "f59c005cc2d471f2fa3bf8da8ee84be80d41cd7ad86d9edb9302bfd84a128084",
+    "config_sha256": "aa41914b6e9fe5bfe30f213b4a5d313d186e1ba822e363c238e784d4668028dd",
     "gate_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
     "power": {
       "ac": true,
@@ -191,7 +192,7 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample2",
+      "out": "/tmp/yb_sample3",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps"
     },
@@ -300,13 +301,13 @@
         {
           "check": "memory",
           "pass": true,
-          "detail": "9.7 GB available",
+          "detail": "10.5 GB available",
           "critical": true
         },
         {
           "check": "disk",
           "pass": true,
-          "detail": "712.9 GB free",
+          "detail": "712.8 GB free",
           "critical": true
         },
         {
@@ -322,31 +323,31 @@
     "telemetry": {
       "n": 3,
       "cpu_pct": {
-        "mean": 4.27,
-        "max": 12.8
+        "mean": 23.6,
+        "max": 39.8
       },
       "ram_pct": {
-        "mean": 60.8,
-        "max": 61.1
+        "mean": 58.67,
+        "max": 59.1
       },
       "proc_rss_mb": {
-        "mean": 414.73,
-        "max": 545.8
+        "mean": 410.47,
+        "max": 559.2
       }
     },
     "controller_telemetry": {
       "n": 5,
       "cpu_pct": {
-        "mean": 12.4,
-        "max": 20.7
+        "mean": 45.48,
+        "max": 100.0
       },
       "ram_pct": {
-        "mean": 60.9,
-        "max": 62.3
+        "mean": 58.5,
+        "max": 59.1
       },
       "proc_rss_mb": {
-        "mean": 310.68,
-        "max": 310.7
+        "mean": 310.8,
+        "max": 310.8
       }
     }
   },
@@ -383,7 +384,7 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample2",
+      "out": "/tmp/yb_sample3",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps",
       "deadline_ms": 66.67,
@@ -396,40 +397,42 @@
     },
     "tests": {
       "end_to_end_ms": {
-        "n": 117,
-        "mean_ms": 55.384014406774796,
-        "median_ms": 17.51112937927246,
-        "p95_ms": 398.3159542083733,
-        "p99_ms": 678.6730289459231,
-        "stdev_ms": 138.04593684047424,
-        "throughput_ips": 18.055751478312413,
+        "n": 118,
+        "mean_ms": 45.404256400415456,
+        "median_ms": 13.873100280761719,
+        "p95_ms": 316.3210153579706,
+        "p99_ms": 605.6781864166259,
+        "stdev_ms": 119.4628173413915,
+        "throughput_ips": 22.024366860699207,
         "accounting": {
           "generated": 121,
           "acquired": 121,
-          "enqueued": 118,
-          "dequeued": 117,
-          "processed": 117,
-          "delivered": 117,
-          "producer_drops": 3,
+          "enqueued": 119,
+          "dequeued": 118,
+          "processed": 118,
+          "delivered": 118,
+          "producer_drops": 2,
           "queue_drops": 0,
           "processing_failures": 0,
           "unfinished": 1
         },
         "conservation_ok": true,
-        "input_fps": 15.0,
-        "throughput_fps": 14.5,
-        "drop_pct": 3.31,
-        "deadline_miss_pct": 7.69,
+        "input_fps": 14.99,
+        "throughput_fps": 14.62,
+        "wall_measured_s": 8.07,
+        "wall_paced_s": 8.07,
+        "drop_pct": 2.48,
+        "deadline_miss_pct": 7.63,
         "stage_means_ms": {
-          "resize": 0.712,
-          "detect": 22.167,
+          "resize": 0.407,
+          "detect": 18.331,
           "embed": 0.001,
-          "associate": 0.004,
+          "associate": 0.003,
           "telemetry": 0.005
         },
-        "acquire_mean_ms": 1.369,
-        "queue_wait_mean_ms": 32.469,
-        "processing_mean_ms": 22.896,
+        "acquire_mean_ms": 0.611,
+        "queue_wait_mean_ms": 26.645,
+        "processing_mean_ms": 18.748,
         "replay_count": 0,
         "source_duration_s": 20.0
       }
@@ -439,31 +442,31 @@
     "telemetry": {
       "n": 16,
       "cpu_pct": {
-        "mean": 12.04,
-        "max": 22.6
+        "mean": 17.96,
+        "max": 29.0
       },
       "ram_pct": {
-        "mean": 61.09,
-        "max": 61.9
+        "mean": 58.88,
+        "max": 59.0
       },
       "proc_rss_mb": {
-        "mean": 587.47,
-        "max": 618.9
+        "mean": 582.86,
+        "max": 611.6
       }
     },
     "controller_telemetry": {
       "n": 18,
       "cpu_pct": {
-        "mean": 13.61,
-        "max": 23.2
+        "mean": 18.13,
+        "max": 28.3
       },
       "ram_pct": {
-        "mean": 61.06,
-        "max": 62.0
+        "mean": 58.83,
+        "max": 59.0
       },
       "proc_rss_mb": {
-        "mean": 310.79,
-        "max": 310.8
+        "mean": 310.89,
+        "max": 310.9
       }
     }
   },
@@ -500,7 +503,7 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample2",
+      "out": "/tmp/yb_sample3",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps",
       "sustained_s": 8,
@@ -509,13 +512,13 @@
     },
     "tests": {
       "windows_ips": [
-        186.78
+        190.13
       ],
       "steady": {
-        "burst_ips": 186.78,
-        "steady_median_ips": 186.78,
-        "min_window_ips": 186.78,
-        "final_window_ips": 186.78,
+        "burst_ips": 190.13,
+        "steady_median_ips": 190.13,
+        "min_window_ips": 190.13,
+        "final_window_ips": 190.13,
         "burst_steady_ratio": 1.0,
         "degradation_pct": 0.0
       },
@@ -530,8 +533,8 @@
       ],
       "sustained": {
         "seconds": 8.0,
-        "iters": 1488,
-        "avg_ips": 185.95
+        "iters": 1527,
+        "avg_ips": 190.84
       },
       "throttling": "none_detected",
       "throttling_evidence": "no windowed degradation"
@@ -541,31 +544,31 @@
     "telemetry": {
       "n": 8,
       "cpu_pct": {
-        "mean": 11.28,
-        "max": 15.0
+        "mean": 16.8,
+        "max": 22.2
       },
       "ram_pct": {
-        "mean": 60.81,
-        "max": 61.3
+        "mean": 59.05,
+        "max": 59.2
       },
       "proc_rss_mb": {
-        "mean": 579.65,
-        "max": 580.1
+        "mean": 580.54,
+        "max": 580.8
       }
     },
     "controller_telemetry": {
       "n": 19,
       "cpu_pct": {
-        "mean": 12.13,
-        "max": 16.4
+        "mean": 17.37,
+        "max": 24.2
       },
       "ram_pct": {
-        "mean": 60.63,
-        "max": 61.1
+        "mean": 58.87,
+        "max": 59.1
       },
       "proc_rss_mb": {
-        "mean": 310.84,
-        "max": 310.9
+        "mean": 310.94,
+        "max": 311.0
       }
     }
   },
@@ -602,17 +605,17 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample2",
+      "out": "/tmp/yb_sample3",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps"
     },
     "tests": {
-      "ram_alloc_touch_16mb_gbps": 4.94,
-      "ram_alloc_touch_64mb_gbps": 22.75,
-      "ram_alloc_touch_256mb_gbps": 23.05,
+      "ram_alloc_touch_16mb_gbps": 23.53,
+      "ram_alloc_touch_64mb_gbps": 21.99,
+      "ram_alloc_touch_256mb_gbps": 22.83,
       "ram_total_gb": 25.77,
       "vram_note": "VRAM ladder probed on CUDA only",
-      "proc_peak_rss_mb": 225.1
+      "proc_peak_rss_mb": 225.0
     },
     "errors": [],
     "status": "FULL",
@@ -623,27 +626,27 @@
         "max": 0.0
       },
       "ram_pct": {
-        "mean": 60.3,
-        "max": 60.3
+        "mean": 58.3,
+        "max": 58.3
       },
       "proc_rss_mb": {
-        "mean": 225.1,
-        "max": 225.1
+        "mean": 225.0,
+        "max": 225.0
       }
     },
     "controller_telemetry": {
       "n": 3,
       "cpu_pct": {
-        "mean": 7.43,
-        "max": 12.3
+        "mean": 7.5,
+        "max": 13.7
       },
       "ram_pct": {
-        "mean": 60.47,
-        "max": 61.2
+        "mean": 58.73,
+        "max": 59.3
       },
       "proc_rss_mb": {
-        "mean": 310.8,
-        "max": 310.8
+        "mean": 310.9,
+        "max": 310.9
       }
     }
   },
@@ -680,41 +683,41 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample2",
+      "out": "/tmp/yb_sample3",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7"
     },
     "tests": {
       "mavlink_serialize": {
         "msgs": 500,
-        "total_ms": 3.0,
-        "kmsgs_per_s": 166.61,
+        "total_ms": 3.03,
+        "kmsgs_per_s": 164.95,
         "bytes_per_msg": 21
       },
       "mavlink_parse_crc": {
         "msgs": 500,
-        "total_ms": 2.86,
-        "kmsgs_per_s": 174.7,
+        "total_ms": 2.87,
+        "kmsgs_per_s": 173.96,
         "corruption_rejected": true
       },
       "loopback_udp_rtt_ms": {
         "n": 500,
-        "mean_ms": 0.9564837699963391,
-        "median_ms": 0.4107294998902944,
-        "p95_ms": 2.1890514497954427,
-        "p99_ms": 7.974354500433926,
-        "stdev_ms": 3.517146951960234,
-        "throughput_ips": 1045.4960464241096,
+        "mean_ms": 0.9713517279742518,
+        "median_ms": 0.43168749971300713,
+        "p95_ms": 2.185087199995901,
+        "p99_ms": 8.130957669800388,
+        "stdev_ms": 3.6608486857855,
+        "throughput_ips": 1029.493201278896,
         "unit": "ms RTT, UDP loopback (stack cost, not link latency)",
         "lost": 0
       },
       "telemetry_process_ms": {
         "n": 500,
-        "mean_ms": 0.001573462002852466,
-        "median_ms": 0.001457999587728409,
-        "p95_ms": 0.0017910501583173755,
-        "p99_ms": 0.002301989861734901,
-        "stdev_ms": 0.0009057863425856367,
-        "throughput_ips": 635541.2448391764
+        "mean_ms": 0.0010161399986827746,
+        "median_ms": 0.000957999873207882,
+        "p95_ms": 0.0011669999366858974,
+        "p99_ms": 0.0014174100215313952,
+        "stdev_ms": 0.00042280177378716075,
+        "throughput_ips": 984116.3631943463
       },
       "sim_link_model_ms": {
         "n": 500,
@@ -733,30 +736,30 @@
     "telemetry": {
       "n": 5,
       "cpu_pct": {
-        "mean": 9.38,
-        "max": 12.9
+        "mean": 5.54,
+        "max": 11.5
       },
       "ram_pct": {
-        "mean": 60.04,
-        "max": 60.1
+        "mean": 58.1,
+        "max": 58.2
       },
       "proc_rss_mb": {
-        "mean": 177.56,
-        "max": 216.3
+        "mean": 178.06,
+        "max": 216.9
       }
     },
     "controller_telemetry": {
       "n": 7,
       "cpu_pct": {
-        "mean": 9.87,
-        "max": 17.4
+        "mean": 8.13,
+        "max": 14.9
       },
       "ram_pct": {
-        "mean": 60.09,
-        "max": 60.2
+        "mean": 58.13,
+        "max": 58.2
       },
       "proc_rss_mb": {
-        "mean": 310.89,
+        "mean": 310.9,
         "max": 310.9
       }
     }
@@ -774,31 +777,31 @@
       {
         "check": "uav.fps>=15",
         "pass": false,
-        "detail": "14.5 fps",
+        "detail": "14.62>=15",
         "kind": "measured"
       },
       {
         "check": "uav.p95_ms<=66.7",
         "pass": false,
-        "detail": "398.3159542083733ms",
+        "detail": "316.3210153579706<=66.7",
         "kind": "measured"
       },
       {
         "check": "uav.p99_ms<=120.0",
         "pass": false,
-        "detail": "678.6730289459231ms",
+        "detail": "605.6781864166259<=120.0",
         "kind": "measured"
       },
       {
         "check": "uav.deadline_miss_pct<=5.0",
         "pass": false,
-        "detail": "7.69%",
+        "detail": "7.63<=5.0",
         "kind": "measured"
       },
       {
         "check": "uav.drop_pct<=5.0",
         "pass": true,
-        "detail": "3.31%",
+        "detail": "2.48<=5.0",
         "kind": "measured"
       },
       {
@@ -810,31 +813,31 @@
       {
         "check": "rover.fps>=15",
         "pass": false,
-        "detail": "14.5 fps",
+        "detail": "14.62>=15",
         "kind": "measured"
       },
       {
         "check": "rover.p95_ms<=66.7",
         "pass": false,
-        "detail": "398.3159542083733ms",
+        "detail": "316.3210153579706<=66.7",
         "kind": "measured"
       },
       {
         "check": "rover.p99_ms<=120.0",
         "pass": false,
-        "detail": "678.6730289459231ms",
+        "detail": "605.6781864166259<=120.0",
         "kind": "measured"
       },
       {
         "check": "rover.deadline_miss_pct<=5.0",
         "pass": false,
-        "detail": "7.69%",
+        "detail": "7.63<=5.0",
         "kind": "measured"
       },
       {
         "check": "rover.drop_pct<=5.0",
         "pass": true,
-        "detail": "3.31%",
+        "detail": "2.48<=5.0",
         "kind": "measured"
       },
       {
@@ -924,7 +927,7 @@
     }
   },
   "_meta": {
-    "timestamp_utc": "20261002_052943",
+    "timestamp_utc": "20261002_061858",
     "req_fps": 15,
     "feasibility": {
       "preflight": "ok",
@@ -938,9 +941,9 @@
         "p95 within 66.7ms deadline; misses/drops <5%"
       ],
       "pipeline": [
-        "end_to_end_ms: p95 398.3ms > deadline 66.7ms",
-        "deadline-miss 7.69% / drops 3.31%",
-        "measured 14.5 FPS vs required 15 FPS"
+        "end_to_end_ms: p95 316.3ms > deadline 66.7ms",
+        "deadline-miss 7.63% / drops 2.48%",
+        "measured 14.62 FPS vs required 15 FPS"
       ],
       "thermal": [
         "p95 within 66.7ms deadline; misses/drops <5%"
@@ -965,31 +968,31 @@
         {
           "check": "uav.fps>=15",
           "pass": false,
-          "detail": "14.5 fps",
+          "detail": "14.62>=15",
           "kind": "measured"
         },
         {
           "check": "uav.p95_ms<=66.7",
           "pass": false,
-          "detail": "398.3159542083733ms",
+          "detail": "316.3210153579706<=66.7",
           "kind": "measured"
         },
         {
           "check": "uav.p99_ms<=120.0",
           "pass": false,
-          "detail": "678.6730289459231ms",
+          "detail": "605.6781864166259<=120.0",
           "kind": "measured"
         },
         {
           "check": "uav.deadline_miss_pct<=5.0",
           "pass": false,
-          "detail": "7.69%",
+          "detail": "7.63<=5.0",
           "kind": "measured"
         },
         {
           "check": "uav.drop_pct<=5.0",
           "pass": true,
-          "detail": "3.31%",
+          "detail": "2.48<=5.0",
           "kind": "measured"
         },
         {
@@ -1001,31 +1004,31 @@
         {
           "check": "rover.fps>=15",
           "pass": false,
-          "detail": "14.5 fps",
+          "detail": "14.62>=15",
           "kind": "measured"
         },
         {
           "check": "rover.p95_ms<=66.7",
           "pass": false,
-          "detail": "398.3159542083733ms",
+          "detail": "316.3210153579706<=66.7",
           "kind": "measured"
         },
         {
           "check": "rover.p99_ms<=120.0",
           "pass": false,
-          "detail": "678.6730289459231ms",
+          "detail": "605.6781864166259<=120.0",
           "kind": "measured"
         },
         {
           "check": "rover.deadline_miss_pct<=5.0",
           "pass": false,
-          "detail": "7.69%",
+          "detail": "7.63<=5.0",
           "kind": "measured"
         },
         {
           "check": "rover.drop_pct<=5.0",
           "pass": true,
-          "detail": "3.31%",
+          "detail": "2.48<=5.0",
           "kind": "measured"
         },
         {
@@ -1116,16 +1119,16 @@
     },
     "provenance": {
       "benchmark": "nexus-benchmarking",
-      "benchmark_version": "0.5.0",
+      "benchmark_version": "0.6.0",
       "git": {
-        "sha": "7512919e293de052033be897407bde7d3ea8875a",
+        "sha": "d1207cf061e53a31c3a100752fbef626cd545a92",
         "dirty": true,
         "root": "/Users/jay/Documents/Projects/nexus-benchmarking"
       },
       "distribution": "dev-git",
       "release": null,
       "source_state": "UNRELEASED / DIRTY SOURCE \u2014 results not reproducible from commit alone",
-      "timestamp_utc": "2026-10-02T05:29:16Z",
+      "timestamp_utc": "2026-10-02T06:18:31Z",
       "python": "3.14.7",
       "platform": "Darwin 27.0.0 (arm64)",
       "packages": {
@@ -1147,7 +1150,7 @@
         "val_data": "none"
       },
       "model_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
-      "config_sha256": "f59c005cc2d471f2fa3bf8da8ee84be80d41cd7ad86d9edb9302bfd84a128084",
+      "config_sha256": "aa41914b6e9fe5bfe30f213b4a5d313d186e1ba822e363c238e784d4668028dd",
       "gate_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "power": {
         "ac": true,

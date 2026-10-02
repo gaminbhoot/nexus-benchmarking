@@ -1,9 +1,11 @@
-"""Seller wizard: one obvious path from folder to ZIP-able qualification.
+"""Developer guided mode: interactive helper for ENGINEERING runs.
 
-No Python/YAML/CLI knowledge assumed. Discovers inputs, asks only useful
-questions, narrates progress in plain language, never dumps tracebacks, and
-finishes with a folder + ZIP + auto-opened HTML report.
+NOT the seller path. The seller appliance is `nexus-bench qualify` (fixed
+official assets/config/gate, no file choices). This wizard exists so developers
+can explore custom models/videos/profiles without memorizing CLI flags — every
+choice here is an engineering choice and results are NOT official qualifications.
 """
+import glob
 import glob
 import os
 import shutil
@@ -65,7 +67,9 @@ def run_wizard():
     from nexus_bench import profiler
     from nexus_bench.profiles import get
     print("=" * 60)
-    print("NEXUS Hardware Qualification")
+    print("NEXUS Developer Guided Mode (NOT an official qualification)")
+    print("Custom models/videos/profiles are engineering choices.")
+    print("For the official seller appliance, run: nexus-bench qualify")
     print("=" * 60)
     prof = profiler.profile()
     gpu = (prof.get("gpu") or {})

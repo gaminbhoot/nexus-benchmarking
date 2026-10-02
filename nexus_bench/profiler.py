@@ -40,11 +40,33 @@ def _smi(fields):
         pass
     return None
 
+def _system_model():
+    """Exact machine identity where the OS exposes it; 'unavailable' otherwise."""
+    if platform.system() == "Darwin":
+        try:
+            out = subprocess.run(["sysctl", "-n", "hw.model"],
+                                 capture_output=True, text=True, timeout=5)
+            if out.returncode == 0 and out.stdout.strip():
+                return out.stdout.strip()
+        except Exception:
+            pass
+    try:
+        if os.path.exists("/sys/devices/virtual/dmi/id/product_name"):
+            with open("/sys/devices/virtual/dmi/id/product_name") as f:
+                prod = f.read().strip()
+            with open("/sys/devices/virtual/dmi/id/sys_vendor") as f:
+                vend = f.read().strip()
+            return f"{vend} {prod}".strip()
+    except Exception:
+        pass
+    return "unavailable"
+
 def profile():
     import psutil
     info = {
         "os": f"{platform.system()} {platform.release()} ({platform.machine()})",
         "kernel": _try(lambda: platform.version()[:120]),
+        "system_model": _system_model(),
         "python": platform.python_version(),
         "cpu": {},
         "memory": {},

@@ -16,7 +16,7 @@ import numpy as np
 from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.profiles import resolve_device
-from nexus_bench.yolo_util import load_weights
+from nexus_bench.yolo_util import deployment_engine, load_weights
 
 def _boxes_of(res):
     try:
@@ -111,7 +111,9 @@ def run(cfg):
     mp = (cfg.get("model") or "").strip()
     imgsz = cfg.get("imgsz", 640)
     val_data = (cfg.get("val_data") or "").strip()
-    out = {"module": "accuracy", "config": {**cfg, "resolved_device": dev},
+    out = {"module": "accuracy",
+           "config": {**cfg, "resolved_device": dev,
+                      "deployment_engine": deployment_engine(dev)},
            "tests": {}, "errors": [], "status": S.FULL}
     if not mp or not os.path.exists(mp):
         out["status"] = S.UNSUPPORTED

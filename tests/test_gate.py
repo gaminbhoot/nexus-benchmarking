@@ -40,6 +40,7 @@ def _sustained_ok(fps=16.0):
             "config": {"duration_s": 600, "model": "m.pt", "precision": "fp32",
                        "resolved_device": "cuda", "imgsz": 640, "batch": 1},
             "tests": {"per_agent": {"uav": dict(agent), "rover": dict(agent)},
+                      "fusion": {"ticks": 1200, "tick_ms": {"p95_ms": 5.0}},
                       "memory_growth": {"growth": 10.0, "leak_suspected": False},
                       "resource_evolution": {
                           "vram_pct": {"initial": 60.0, "max": 70.0, "final": 65.0},

@@ -32,7 +32,7 @@ def _make_test_package(tmp_path):
             vw.write(rng.integers(0, 255, (120, 160, 3), dtype=np.uint8))
         vw.release()
     import shutil as _sh
-    _sh.copy("/Users/jay/Documents/Projects/Python/yolov11-project/yolo11n.pt",
+    _sh.copy(os.path.join(A.package_root(), "assets", "model", "yolo11n.pt"),
              pkg / "assets" / "model" / "yolo11n.pt")
     (pkg / "assets" / "accuracy" / "coco8.zip").write_bytes(b"placeholder")
     manifest = {"qualification_version": "test-1", "manifest_version": "test-1",
