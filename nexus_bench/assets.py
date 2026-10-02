@@ -47,7 +47,7 @@ OFFICIAL_MANIFEST = {
          "version": "1.0", "type": "dataset", "filename": "accuracy/coco8.zip",
          "size": 443158,
          "sha256": "54c67fe9ef88313e021ec0e92b73c200167bb0a86633e8df8658d832cca828c9",
-         "tree_sha256": "c6067211ef3d17647bc873aca7398a80d0a7a7da42e8e30e357bf4db9cfaa33e",
+         "tree_sha256": "de3b36b93aa87f9770316333d0aaf81dbc50a27dcfe80229c7bda4a5c0d789b6",
          "source": COCO8_URL,
          "purpose": "official labelled accuracy data (real labels, real mAP)"},
     ],

@@ -61,7 +61,7 @@ def official_config(root, duration_s, out_dir):
                                "cfg", "datasets", "coco8.yaml")
         with open(bundled) as f:
             data = _yaml.safe_load(f)
-        data["path"] = os.path.join(paths["accuracy_dir"], "coco8")
+        data["path"] = paths["accuracy_dir"]
         with open(acc_yaml, "w") as f:
             _yaml.safe_dump(data, f)
     cfg.update({"model": paths["model"], "uav_video": paths["uav_video"],
