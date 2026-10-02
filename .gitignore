@@ -9,3 +9,4 @@ reports/
 *.egg-info/
 release/
 dist/
+*.cache
