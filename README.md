@@ -1,13 +1,23 @@
-# NEXUS Benchmarking — Reference Hardware Qualification v1.0
+# NEXUS Benchmarking — Reference Hardware Qualification v2.0
 
 This repository builds the **NEXUS Reference Hardware Qualification**: a fixed,
 versioned procedure that tests whether a machine can run the reference NEXUS
-workload (YOLO11n + reference Re-ID + DeepSORT-style tracking on official
-sequences, UAV + rover + fusion) continuously for 10–15 minutes.
+workload continuously for 10–15 minutes.
 
-> It does **not** certify every future production NEXUS model — only that this
-> machine passed this exact reference procedure. The report states the exact
-> model, data, code, and gate versions measured.
+**Reference workload (v2.0): YOLO26m (21.9M params measured) + reference Re-ID
++ DeepSORT-style tracking on official sequences, UAV + rover + fusion, 640×640,
+FP16, batch 1, dual-agent sustained.**
+
+## Two layers — do not confuse them
+
+| Layer | Workload | Command | Claim |
+|---|---|---|---|
+| **Reference Qualification** | YOLO26m reference weights + reference Re-ID/tracker, official assets/gate | `nexus-bench qualify` / launcher | This machine sustains the reference NEXUS-class workload |
+| **Production Qualification** | Your exact trained YOLO26m checkpoint + exact Re-ID weights + deployment backend | engineering CLI (`--model`, `--reid-model`, `candidate_engines`) | This machine sustains your exact production stack |
+
+A Reference PASS does **not** certify every future production model — only that
+this machine passed this exact reference procedure. The report states the exact
+model, data, code, and gate versions measured.
 
 ## Seller workflow (the only seller workflow)
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.0 — YOLO26m production workload (Qualification v2.0)
+
+- Official workload is now **YOLO26m** (21.9M params measured, 44 MB,
+  pinned SHA-256 from the official v8.4.0 release assets): the RTX 3050
+  purchase gate measures the actual deployment-class detector, not YOLO11n.
+- Qualification bumped v1.0 → **v2.0** (model change = new procedure);
+  Reference vs Production layers documented (reference = fixed 26m weights;
+  production = your exact checkpoint via engineering CLI).
+- Validated on YOLO26m: FP16 effective-precision, FP32-vs-FP16 mAP comparison
+  (drop 0.0 on COCO8), dual-context sustained FULL.
+- Old reports/samples from the YOLO11n era must not be used for purchase.
+
 ## 0.7.0 — reproducible immutable product
 
 - Pinned runtime (`requirements.lock`, verified exact versions): seller

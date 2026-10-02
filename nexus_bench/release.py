@@ -9,7 +9,8 @@ import hashlib
 import json
 import os
 
-QUALIFICATION_VERSION = "1.0"
+# Single source of truth: the asset manifest defines the qualification.
+from nexus_bench.assets import ASSET_MANIFEST_VERSION, QUALIFICATION_VERSION
 GATE_VERSION = "1.0"
 
 def package_root():

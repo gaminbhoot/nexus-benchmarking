@@ -11,23 +11,23 @@ import hashlib
 import os
 import urllib.request
 
-QUALIFICATION_VERSION = "1.0"
-ASSET_MANIFEST_VERSION = "1.0"
+QUALIFICATION_VERSION = "2.0"
+ASSET_MANIFEST_VERSION = "2.0"
 
-MODEL_URL = "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt"
+MODEL_URL = "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26m.pt"
 COCO8_URL = "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco8.zip"
 
 OFFICIAL_MANIFEST = {
     "qualification_version": QUALIFICATION_VERSION,
     "manifest_version": ASSET_MANIFEST_VERSION,
     "assets": [
-        {"asset_id": "nexus-qual-model-yolo11n-v1",
-         "name": "NEXUS qualification detection model (reference YOLO11n)",
-         "version": "1.0", "type": "model", "filename": "model/yolo11n.pt",
-         "size": 5613764,
-         "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+        {"asset_id": "nexus-qual-model-yolo26m-v1",
+         "name": "NEXUS qualification detection model (YOLO26m reference, 21.9M params)",
+         "version": "2.0", "type": "model", "filename": "model/yolo26m.pt",
+         "size": 44255705,
+         "sha256": "401cea9ab23ad19246ff7744859816bc599f350e93c9dd30367b6f0a0745d0b7",
          "source": MODEL_URL,
-         "purpose": "official NEXUS detection workload"},
+         "purpose": "official NEXUS detection workload (YOLO26m, 640, FP16, batch 1)"},
         {"asset_id": "nexus-qual-uav-v1",
          "name": "UAV official motion sequence v1 (seeded, 640x480@30, 20 s)",
          "version": "1.0", "type": "video", "filename": "video/uav_test_v1.mp4",

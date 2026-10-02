@@ -32,13 +32,13 @@ def _make_test_package(tmp_path):
             vw.write(rng.integers(0, 255, (120, 160, 3), dtype=np.uint8))
         vw.release()
     import shutil as _sh
-    _sh.copy(os.path.join(A.package_root(), "assets", "model", "yolo11n.pt"),
-             pkg / "assets" / "model" / "yolo11n.pt")
+    _sh.copy(os.path.join(A.package_root(), "assets", "model", "yolo26m.pt"),
+             pkg / "assets" / "model" / "yolo26m.pt")
     (pkg / "assets" / "accuracy" / "coco8.zip").write_bytes(b"placeholder")
     manifest = {"qualification_version": "test-1", "manifest_version": "test-1",
                 "assets": []}
     for rel, aid, typ, purpose in (
-            ("model/yolo11n.pt", "t-model", "model", "detection"),
+            ("model/yolo26m.pt", "t-model", "model", "detection"),
             ("video/uav_test_v1.mp4", "t-uav", "video", "uav"),
             ("video/rover_test_v1.mp4", "t-rover", "video", "rover"),
             ("accuracy/coco8.zip", "t-acc", "dataset", "accuracy")):
@@ -63,7 +63,7 @@ def test_assets_verify_ok_and_detect_corruption(tmp_path, monkeypatch):
     _patch_manifest(monkeypatch, pkg, manifest)
     ok, recs = A.verify_assets(str(pkg))
     assert ok and all(r["status"] == "OK" for r in recs)
-    with open(pkg / "assets" / "model" / "yolo11n.pt", "r+b") as f:
+    with open(pkg / "assets" / "model" / "yolo26m.pt", "r+b") as f:
         f.seek(100)
         f.write(b"\x00")
     ok2, recs2 = A.verify_assets(str(pkg))
@@ -100,7 +100,7 @@ def test_bootstrap_from_trusted_url_only(tmp_path, monkeypatch):
 def test_qualify_corrupt_asset_aborts_without_pass(tmp_path, monkeypatch):
     pkg, manifest = _make_test_package(tmp_path)
     _patch_manifest(monkeypatch, pkg, manifest)
-    with open(pkg / "assets" / "model" / "yolo11n.pt", "r+b") as f:
+    with open(pkg / "assets" / "model" / "yolo26m.pt", "r+b") as f:
         f.seek(100)
         f.write(b"\x00")
     import webbrowser

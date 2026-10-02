@@ -3,9 +3,9 @@
 # headline numbers below, and stop when OOM marks the boundary. The boundary —
 # not the biggest passing cell — is the result of this profile.
 #
-#   cell: model=YOLO11n imgsz=320 batch=1 fp16  -> expect: fits, fastest
-#   cell: model=YOLO11n imgsz=640 batch=1 fp16  -> expect: fits
-#   cell: model=YOLO11n imgsz=640 batch=4 fp16  -> watch: batch throughput vs VRAM
+#   cell: model=YOLO26m imgsz=320 batch=1 fp16  -> expect: fits (reference workload)
+#   cell: model=YOLO26m imgsz=640 batch=1 fp16  -> expect: fits (reference workload)
+#   cell: model=YOLO26m imgsz=640 batch=4 fp16  -> watch: batch throughput vs VRAM
 #   cell: model=NEXUS    imgsz=640 batch=1 fp16 -> the deployment question
 #   cell: model=NEXUS    imgsz=640 batch=1 fp32 -> fp16 saving, measured
 #   cell: model=NEXUS    imgsz=960 batch=1 fp16 -> expect: OOM or heavy misses

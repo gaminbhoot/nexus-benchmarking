@@ -16,7 +16,7 @@
     },
     "storage": {
       "total_gb": 994.6,
-      "free_gb": 712.8
+      "free_gb": 711.9
     },
     "gpu": {
       "vendor": "unavailable (no nvidia-smi)",
@@ -48,7 +48,7 @@
     "imgsz": 320,
     "batch": 1,
     "precision": "fp32",
-    "model": "assets/model/yolo11n.pt",
+    "model": "assets/model/yolo26m.pt",
     "reid_model": "",
     "video": "assets/video/uav_test_v1.mp4",
     "uav_video": "",
@@ -70,12 +70,12 @@
     "leak_threshold_mb": 300,
     "throttle_temp_c": 83,
     "req_fps": 15,
-    "out": "/tmp/yb_sample5",
+    "out": "/tmp/yb_sample26",
     "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7"
   },
   "_provenance": {
     "benchmark": "nexus-benchmarking",
-    "benchmark_version": "0.7.0",
+    "benchmark_version": "0.8.0",
     "git": {
       "sha": "n/a (packaged distribution)",
       "dirty": false,
@@ -90,11 +90,11 @@
       "asset_manifest_sha256": "66789d8d918f4983b995893469207e9401dfd8838210119d6988f36a272e53cd",
       "gate_sha256": "af1ab274b027036a13e7e64f4fa01e08af61829e26321c0645f4c59b479d2c19",
       "requirements_sha256": "d94d46d6fa1eb0ce135e43dbfdb5232c879c168a180d4956bec5fb722e671f4d",
-      "benchmark_source_sha256": "a77474648fe6dcc786073cb1b73d16c8d9500b5a240ef484fb85d0477d3d7140",
-      "built_utc": "2026-10-02T07:18:02Z"
+      "benchmark_source_sha256": "9385bc5e6bb2ced19fd8ec08fa2ab21e849a04d5fce0e93caa739744b3ec57a0",
+      "built_utc": "2026-10-02T07:30:43Z"
     },
     "source_state": "packaged release",
-    "timestamp_utc": "2026-10-02T07:30:15Z",
+    "timestamp_utc": "2026-10-02T08:39:46Z",
     "python": "3.14.7",
     "platform": "Darwin 27.0.0 (arm64)",
     "packages": {
@@ -107,7 +107,7 @@
       "onnxruntime": "missing"
     },
     "fingerprints": {
-      "model": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+      "model": "401cea9ab23ad19246ff7744859816bc599f350e93c9dd30367b6f0a0745d0b7",
       "reid_model": "none",
       "video": "5146438f8423aa43b618c07bacc5c9ef3a2cf079962e2133466bf65761b63954",
       "uav_video": "none",
@@ -115,12 +115,12 @@
       "image_dir": "none",
       "val_data": "none"
     },
-    "model_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
-    "config_sha256": "cf992d284990cae69430162004f11d8ebf0ac4466db745b7bcace7c76779d901",
+    "model_sha256": "401cea9ab23ad19246ff7744859816bc599f350e93c9dd30367b6f0a0745d0b7",
+    "config_sha256": "9cdf054cc5d4bd7b6d24274c1686a3a7be8d2d4d63ac1735cf13a1bb3eb4eb8f",
     "gate_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
     "power": {
-      "ac": false,
-      "battery_pct": 89
+      "ac": true,
+      "battery_pct": 90
     }
   },
   "_power": {
@@ -136,15 +136,15 @@
     },
     "signals": {
       "ac_connected": {
-        "value": false,
+        "value": true,
         "how": "measured"
       },
       "battery_pct": {
-        "value": 89,
+        "value": 90,
         "how": "measured"
       },
       "battery_state": {
-        "value": "charging/discharging",
+        "value": "on AC",
         "how": "measured"
       },
       "gpu_power_w": {
@@ -180,7 +180,7 @@
       "imgsz": 320,
       "batch": 1,
       "precision": "fp32",
-      "model": "assets/model/yolo11n.pt",
+      "model": "assets/model/yolo26m.pt",
       "reid_model": "",
       "video": "assets/video/uav_test_v1.mp4",
       "uav_video": "",
@@ -202,7 +202,7 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample5",
+      "out": "/tmp/yb_sample26",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps"
     },
@@ -220,15 +220,15 @@
         },
         "signals": {
           "ac_connected": {
-            "value": false,
+            "value": true,
             "how": "measured"
           },
           "battery_pct": {
-            "value": 89,
+            "value": 90,
             "how": "measured"
           },
           "battery_state": {
-            "value": "charging/discharging",
+            "value": "on AC",
             "how": "measured"
           },
           "gpu_power_w": {
@@ -269,7 +269,7 @@
         {
           "check": "model",
           "pass": true,
-          "detail": "loads: yolo11n.pt",
+          "detail": "loads: yolo26m.pt",
           "critical": true
         },
         {
@@ -311,19 +311,19 @@
         {
           "check": "memory",
           "pass": true,
-          "detail": "9.9 GB available",
+          "detail": "10.2 GB available",
           "critical": true
         },
         {
           "check": "disk",
           "pass": true,
-          "detail": "712.8 GB free",
+          "detail": "711.9 GB free",
           "critical": true
         },
         {
           "check": "power",
           "pass": true,
-          "detail": "AC=False (informational; strict gate requires AC)",
+          "detail": "AC=True (informational; strict gate requires AC)",
           "critical": false
         }
       ]
@@ -333,31 +333,31 @@
     "telemetry": {
       "n": 2,
       "cpu_pct": {
-        "mean": 0.0,
-        "max": 0.0
+        "mean": 5.35,
+        "max": 10.7
       },
       "ram_pct": {
-        "mean": 61.1,
-        "max": 61.4
+        "mean": 60.0,
+        "max": 60.6
       },
       "proc_rss_mb": {
-        "mean": 349.95,
-        "max": 475.0
+        "mean": 449.25,
+        "max": 674.0
       }
     },
     "controller_telemetry": {
       "n": 4,
       "cpu_pct": {
-        "mean": 8.82,
-        "max": 16.3
+        "mean": 8.0,
+        "max": 10.9
       },
       "ram_pct": {
-        "mean": 61.02,
-        "max": 61.5
+        "mean": 59.73,
+        "max": 60.7
       },
       "proc_rss_mb": {
-        "mean": 310.8,
-        "max": 310.8
+        "mean": 310.68,
+        "max": 310.7
       }
     }
   },
@@ -372,7 +372,7 @@
       "imgsz": 320,
       "batch": 1,
       "precision": "fp32",
-      "model": "assets/model/yolo11n.pt",
+      "model": "assets/model/yolo26m.pt",
       "reid_model": "",
       "video": "assets/video/uav_test_v1.mp4",
       "uav_video": "",
@@ -394,7 +394,7 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample5",
+      "out": "/tmp/yb_sample26",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps",
       "deadline_ms": 66.67,
@@ -407,42 +407,42 @@
     },
     "tests": {
       "end_to_end_ms": {
-        "n": 119,
-        "mean_ms": 42.68639628626719,
-        "median_ms": 14.612913131713867,
-        "p95_ms": 274.3395090103146,
-        "p99_ms": 560.7268190383907,
-        "stdev_ms": 108.68258331918392,
-        "throughput_ips": 23.42666720548893,
+        "n": 118,
+        "mean_ms": 51.210736824294266,
+        "median_ms": 18.424153327941895,
+        "p95_ms": 337.3190879821772,
+        "p99_ms": 606.1676549911498,
+        "stdev_ms": 120.78374647929598,
+        "throughput_ips": 19.527155085290673,
         "accounting": {
           "generated": 121,
           "acquired": 121,
-          "enqueued": 120,
-          "dequeued": 119,
-          "processed": 119,
-          "delivered": 119,
-          "producer_drops": 1,
+          "enqueued": 119,
+          "dequeued": 118,
+          "processed": 118,
+          "delivered": 118,
+          "producer_drops": 2,
           "queue_drops": 0,
           "processing_failures": 0,
           "unfinished": 1
         },
         "conservation_ok": true,
         "input_fps": 14.99,
-        "throughput_fps": 14.74,
+        "throughput_fps": 14.62,
         "wall_measured_s": 8.07,
         "wall_paced_s": 8.07,
-        "drop_pct": 1.65,
-        "deadline_miss_pct": 7.56,
+        "drop_pct": 2.48,
+        "deadline_miss_pct": 7.63,
         "stage_means_ms": {
-          "resize": 0.374,
-          "detect": 18.386,
-          "embed": 0.001,
-          "associate": 0.003,
-          "telemetry": 0.005
+          "resize": 0.477,
+          "detect": 22.636,
+          "embed": 0.28,
+          "associate": 0.034,
+          "telemetry": 0.011
         },
-        "acquire_mean_ms": 0.574,
-        "queue_wait_mean_ms": 23.904,
-        "processing_mean_ms": 18.771,
+        "acquire_mean_ms": 0.703,
+        "queue_wait_mean_ms": 27.762,
+        "processing_mean_ms": 23.44,
         "replay_count": 0,
         "source_duration_s": 20.0
       }
@@ -452,31 +452,31 @@
     "telemetry": {
       "n": 16,
       "cpu_pct": {
-        "mean": 7.54,
-        "max": 16.7
+        "mean": 6.16,
+        "max": 10.5
       },
       "ram_pct": {
-        "mean": 61.5,
-        "max": 61.8
+        "mean": 60.82,
+        "max": 61.1
       },
       "proc_rss_mb": {
-        "mean": 584.09,
-        "max": 613.2
+        "mean": 754.01,
+        "max": 796.2
       }
     },
     "controller_telemetry": {
       "n": 18,
       "cpu_pct": {
-        "mean": 8.29,
-        "max": 16.8
+        "mean": 6.59,
+        "max": 11.6
       },
       "ram_pct": {
-        "mean": 61.44,
-        "max": 61.9
+        "mean": 60.71,
+        "max": 61.1
       },
       "proc_rss_mb": {
-        "mean": 310.89,
-        "max": 310.9
+        "mean": 310.7,
+        "max": 310.7
       }
     }
   },
@@ -491,7 +491,7 @@
       "imgsz": 320,
       "batch": 1,
       "precision": "fp32",
-      "model": "assets/model/yolo11n.pt",
+      "model": "assets/model/yolo26m.pt",
       "reid_model": "",
       "video": "assets/video/uav_test_v1.mp4",
       "uav_video": "",
@@ -513,22 +513,22 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample5",
+      "out": "/tmp/yb_sample26",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps",
       "sustained_s": 8,
       "window_s": 5.0,
-      "load": "yolo (assets/model/yolo11n.pt @ fp32)"
+      "load": "yolo (assets/model/yolo26m.pt @ fp32)"
     },
     "tests": {
       "windows_ips": [
-        191.1
+        90.81
       ],
       "steady": {
-        "burst_ips": 191.1,
-        "steady_median_ips": 191.1,
-        "min_window_ips": 191.1,
-        "final_window_ips": 191.1,
+        "burst_ips": 90.81,
+        "steady_median_ips": 90.81,
+        "min_window_ips": 90.81,
+        "final_window_ips": 90.81,
         "burst_steady_ratio": 1.0,
         "degradation_pct": 0.0
       },
@@ -543,8 +543,8 @@
       ],
       "sustained": {
         "seconds": 8.0,
-        "iters": 1536,
-        "avg_ips": 191.9
+        "iters": 729,
+        "avg_ips": 91.11
       },
       "throttling": "none_detected",
       "throttling_evidence": "no windowed degradation"
@@ -554,31 +554,31 @@
     "telemetry": {
       "n": 8,
       "cpu_pct": {
-        "mean": 8.71,
-        "max": 10.5
+        "mean": 7.45,
+        "max": 9.3
       },
       "ram_pct": {
-        "mean": 61.26,
-        "max": 61.5
+        "mean": 60.85,
+        "max": 60.9
       },
       "proc_rss_mb": {
-        "mean": 579.36,
-        "max": 579.6
+        "mean": 757.17,
+        "max": 757.3
       }
     },
     "controller_telemetry": {
       "n": 19,
       "cpu_pct": {
-        "mean": 10.21,
-        "max": 17.4
+        "mean": 8.33,
+        "max": 11.3
       },
       "ram_pct": {
-        "mean": 61.15,
-        "max": 61.3
+        "mean": 60.68,
+        "max": 60.9
       },
       "proc_rss_mb": {
-        "mean": 310.9,
-        "max": 310.9
+        "mean": 310.7,
+        "max": 310.7
       }
     }
   },
@@ -593,7 +593,7 @@
       "imgsz": 320,
       "batch": 1,
       "precision": "fp32",
-      "model": "assets/model/yolo11n.pt",
+      "model": "assets/model/yolo26m.pt",
       "reid_model": "",
       "video": "assets/video/uav_test_v1.mp4",
       "uav_video": "",
@@ -615,17 +615,17 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample5",
+      "out": "/tmp/yb_sample26",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "resolved_device": "mps"
     },
     "tests": {
-      "ram_alloc_touch_16mb_gbps": 4.98,
-      "ram_alloc_touch_64mb_gbps": 24.92,
-      "ram_alloc_touch_256mb_gbps": 22.77,
+      "ram_alloc_touch_16mb_gbps": 23.48,
+      "ram_alloc_touch_64mb_gbps": 20.64,
+      "ram_alloc_touch_256mb_gbps": 22.9,
       "ram_total_gb": 25.77,
       "vram_note": "VRAM ladder probed on CUDA only",
-      "proc_peak_rss_mb": 224.5
+      "proc_peak_rss_mb": 225.0
     },
     "errors": [],
     "status": "FULL",
@@ -636,27 +636,27 @@
         "max": 0.0
       },
       "ram_pct": {
-        "mean": 60.5,
-        "max": 60.5
+        "mean": 59.5,
+        "max": 59.5
       },
       "proc_rss_mb": {
-        "mean": 224.5,
-        "max": 224.5
+        "mean": 225.0,
+        "max": 225.0
       }
     },
     "controller_telemetry": {
       "n": 3,
       "cpu_pct": {
-        "mean": 6.6,
-        "max": 11.7
+        "mean": 6.3,
+        "max": 11.4
       },
       "ram_pct": {
-        "mean": 60.9,
-        "max": 61.4
+        "mean": 59.9,
+        "max": 60.4
       },
       "proc_rss_mb": {
-        "mean": 310.9,
-        "max": 310.9
+        "mean": 310.7,
+        "max": 310.7
       }
     }
   },
@@ -671,7 +671,7 @@
       "imgsz": 320,
       "batch": 1,
       "precision": "fp32",
-      "model": "assets/model/yolo11n.pt",
+      "model": "assets/model/yolo26m.pt",
       "reid_model": "",
       "video": "assets/video/uav_test_v1.mp4",
       "uav_video": "",
@@ -693,41 +693,41 @@
       "leak_threshold_mb": 300,
       "throttle_temp_c": 83,
       "req_fps": 15,
-      "out": "/tmp/yb_sample5",
+      "out": "/tmp/yb_sample26",
       "gate_cfg_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7"
     },
     "tests": {
       "mavlink_serialize": {
         "msgs": 500,
-        "total_ms": 3.04,
-        "kmsgs_per_s": 164.57,
+        "total_ms": 3.06,
+        "kmsgs_per_s": 163.4,
         "bytes_per_msg": 21
       },
       "mavlink_parse_crc": {
         "msgs": 500,
-        "total_ms": 2.93,
-        "kmsgs_per_s": 170.93,
+        "total_ms": 2.88,
+        "kmsgs_per_s": 173.79,
         "corruption_rejected": true
       },
       "loopback_udp_rtt_ms": {
         "n": 500,
-        "mean_ms": 0.48899949596307124,
-        "median_ms": 0.2059795006061904,
-        "p95_ms": 1.3259291511531042,
-        "p99_ms": 2.9590075003216043,
-        "stdev_ms": 2.60516813040828,
-        "throughput_ips": 2044.9918829272556,
+        "mean_ms": 0.4814049900160171,
+        "median_ms": 0.19693700050993357,
+        "p95_ms": 1.2694167001427548,
+        "p99_ms": 2.823822919453956,
+        "stdev_ms": 2.6186826154272813,
+        "throughput_ips": 2077.2530836598276,
         "unit": "ms RTT, UDP loopback (stack cost, not link latency)",
         "lost": 0
       },
       "telemetry_process_ms": {
         "n": 500,
-        "mean_ms": 0.0013256060519779567,
-        "median_ms": 0.0012500004231696948,
+        "mean_ms": 0.001322259984590346,
+        "median_ms": 0.0012499986041802913,
         "p95_ms": 0.0015000005078036338,
-        "p99_ms": 0.0018749997252598405,
-        "stdev_ms": 0.00044312539863180123,
-        "throughput_ips": 754371.9331304237
+        "p99_ms": 0.001833999722293811,
+        "stdev_ms": 0.0006131084166481037,
+        "throughput_ips": 756280.9217960365
       },
       "sim_link_model_ms": {
         "n": 500,
@@ -746,31 +746,31 @@
     "telemetry": {
       "n": 4,
       "cpu_pct": {
-        "mean": 3.75,
-        "max": 8.3
+        "mean": 3.47,
+        "max": 7.6
       },
       "ram_pct": {
-        "mean": 60.27,
-        "max": 60.4
+        "mean": 59.22,
+        "max": 59.3
       },
       "proc_rss_mb": {
-        "mean": 168.2,
+        "mean": 168.17,
         "max": 216.7
       }
     },
     "controller_telemetry": {
       "n": 6,
       "cpu_pct": {
-        "mean": 7.2,
-        "max": 12.6
+        "mean": 5.92,
+        "max": 10.6
       },
       "ram_pct": {
-        "mean": 60.32,
-        "max": 60.4
+        "mean": 59.25,
+        "max": 59.4
       },
       "proc_rss_mb": {
-        "mean": 310.9,
-        "max": 310.9
+        "mean": 310.7,
+        "max": 310.7
       }
     }
   },
@@ -787,31 +787,31 @@
       {
         "check": "uav.fps>=15",
         "pass": false,
-        "detail": "14.74>=15",
+        "detail": "14.62>=15",
         "kind": "measured"
       },
       {
         "check": "uav.p95_ms<=66.7",
         "pass": false,
-        "detail": "274.3395090103146<=66.7",
+        "detail": "337.3190879821772<=66.7",
         "kind": "measured"
       },
       {
         "check": "uav.p99_ms<=120.0",
         "pass": false,
-        "detail": "560.7268190383907<=120.0",
+        "detail": "606.1676549911498<=120.0",
         "kind": "measured"
       },
       {
         "check": "uav.deadline_miss_pct<=5.0",
         "pass": false,
-        "detail": "7.56<=5.0",
+        "detail": "7.63<=5.0",
         "kind": "measured"
       },
       {
         "check": "uav.drop_pct<=5.0",
         "pass": true,
-        "detail": "1.65<=5.0",
+        "detail": "2.48<=5.0",
         "kind": "measured"
       },
       {
@@ -823,31 +823,31 @@
       {
         "check": "rover.fps>=15",
         "pass": false,
-        "detail": "14.74>=15",
+        "detail": "14.62>=15",
         "kind": "measured"
       },
       {
         "check": "rover.p95_ms<=66.7",
         "pass": false,
-        "detail": "274.3395090103146<=66.7",
+        "detail": "337.3190879821772<=66.7",
         "kind": "measured"
       },
       {
         "check": "rover.p99_ms<=120.0",
         "pass": false,
-        "detail": "560.7268190383907<=120.0",
+        "detail": "606.1676549911498<=120.0",
         "kind": "measured"
       },
       {
         "check": "rover.deadline_miss_pct<=5.0",
         "pass": false,
-        "detail": "7.56<=5.0",
+        "detail": "7.63<=5.0",
         "kind": "measured"
       },
       {
         "check": "rover.drop_pct<=5.0",
         "pass": true,
-        "detail": "1.65<=5.0",
+        "detail": "2.48<=5.0",
         "kind": "measured"
       },
       {
@@ -894,9 +894,9 @@
       },
       {
         "check": "power.ac",
-        "pass": false,
-        "detail": "TEST CONDITION: BATTERY POWER \u2014 strict qualification requires AC (INCONCLUSIVE, not equivalent)",
-        "kind": "missing"
+        "pass": true,
+        "detail": "AC connected",
+        "kind": "measured"
       }
     ],
     "states": {
@@ -937,7 +937,7 @@
     }
   },
   "_meta": {
-    "timestamp_utc": "20261002_073041",
+    "timestamp_utc": "20261002_084012",
     "req_fps": 15,
     "feasibility": {
       "preflight": "ok",
@@ -951,9 +951,9 @@
         "p95 within 66.7ms deadline; misses/drops <5%"
       ],
       "pipeline": [
-        "end_to_end_ms: p95 274.3ms > deadline 66.7ms",
-        "deadline-miss 7.56% / drops 1.65%",
-        "measured 14.74 FPS vs required 15 FPS"
+        "end_to_end_ms: p95 337.3ms > deadline 66.7ms",
+        "deadline-miss 7.63% / drops 2.48%",
+        "measured 14.62 FPS vs required 15 FPS"
       ],
       "thermal": [
         "p95 within 66.7ms deadline; misses/drops <5%"
@@ -978,31 +978,31 @@
         {
           "check": "uav.fps>=15",
           "pass": false,
-          "detail": "14.74>=15",
+          "detail": "14.62>=15",
           "kind": "measured"
         },
         {
           "check": "uav.p95_ms<=66.7",
           "pass": false,
-          "detail": "274.3395090103146<=66.7",
+          "detail": "337.3190879821772<=66.7",
           "kind": "measured"
         },
         {
           "check": "uav.p99_ms<=120.0",
           "pass": false,
-          "detail": "560.7268190383907<=120.0",
+          "detail": "606.1676549911498<=120.0",
           "kind": "measured"
         },
         {
           "check": "uav.deadline_miss_pct<=5.0",
           "pass": false,
-          "detail": "7.56<=5.0",
+          "detail": "7.63<=5.0",
           "kind": "measured"
         },
         {
           "check": "uav.drop_pct<=5.0",
           "pass": true,
-          "detail": "1.65<=5.0",
+          "detail": "2.48<=5.0",
           "kind": "measured"
         },
         {
@@ -1014,31 +1014,31 @@
         {
           "check": "rover.fps>=15",
           "pass": false,
-          "detail": "14.74>=15",
+          "detail": "14.62>=15",
           "kind": "measured"
         },
         {
           "check": "rover.p95_ms<=66.7",
           "pass": false,
-          "detail": "274.3395090103146<=66.7",
+          "detail": "337.3190879821772<=66.7",
           "kind": "measured"
         },
         {
           "check": "rover.p99_ms<=120.0",
           "pass": false,
-          "detail": "560.7268190383907<=120.0",
+          "detail": "606.1676549911498<=120.0",
           "kind": "measured"
         },
         {
           "check": "rover.deadline_miss_pct<=5.0",
           "pass": false,
-          "detail": "7.56<=5.0",
+          "detail": "7.63<=5.0",
           "kind": "measured"
         },
         {
           "check": "rover.drop_pct<=5.0",
           "pass": true,
-          "detail": "1.65<=5.0",
+          "detail": "2.48<=5.0",
           "kind": "measured"
         },
         {
@@ -1085,9 +1085,9 @@
         },
         {
           "check": "power.ac",
-          "pass": false,
-          "detail": "TEST CONDITION: BATTERY POWER \u2014 strict qualification requires AC (INCONCLUSIVE, not equivalent)",
-          "kind": "missing"
+          "pass": true,
+          "detail": "AC connected",
+          "kind": "measured"
         }
       ],
       "states": {
@@ -1129,7 +1129,7 @@
     },
     "provenance": {
       "benchmark": "nexus-benchmarking",
-      "benchmark_version": "0.7.0",
+      "benchmark_version": "0.8.0",
       "git": {
         "sha": "n/a (packaged distribution)",
         "dirty": false,
@@ -1144,11 +1144,11 @@
         "asset_manifest_sha256": "66789d8d918f4983b995893469207e9401dfd8838210119d6988f36a272e53cd",
         "gate_sha256": "af1ab274b027036a13e7e64f4fa01e08af61829e26321c0645f4c59b479d2c19",
         "requirements_sha256": "d94d46d6fa1eb0ce135e43dbfdb5232c879c168a180d4956bec5fb722e671f4d",
-        "benchmark_source_sha256": "a77474648fe6dcc786073cb1b73d16c8d9500b5a240ef484fb85d0477d3d7140",
-        "built_utc": "2026-10-02T07:18:02Z"
+        "benchmark_source_sha256": "9385bc5e6bb2ced19fd8ec08fa2ab21e849a04d5fce0e93caa739744b3ec57a0",
+        "built_utc": "2026-10-02T07:30:43Z"
       },
       "source_state": "packaged release",
-      "timestamp_utc": "2026-10-02T07:30:15Z",
+      "timestamp_utc": "2026-10-02T08:39:46Z",
       "python": "3.14.7",
       "platform": "Darwin 27.0.0 (arm64)",
       "packages": {
@@ -1161,7 +1161,7 @@
         "onnxruntime": "missing"
       },
       "fingerprints": {
-        "model": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+        "model": "401cea9ab23ad19246ff7744859816bc599f350e93c9dd30367b6f0a0745d0b7",
         "reid_model": "none",
         "video": "5146438f8423aa43b618c07bacc5c9ef3a2cf079962e2133466bf65761b63954",
         "uav_video": "none",
@@ -1169,12 +1169,12 @@
         "image_dir": "none",
         "val_data": "none"
       },
-      "model_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
-      "config_sha256": "cf992d284990cae69430162004f11d8ebf0ac4466db745b7bcace7c76779d901",
+      "model_sha256": "401cea9ab23ad19246ff7744859816bc599f350e93c9dd30367b6f0a0745d0b7",
+      "config_sha256": "9cdf054cc5d4bd7b6d24274c1686a3a7be8d2d4d63ac1735cf13a1bb3eb4eb8f",
       "gate_sha256": "c7605105c10084cf3fbb89040d32ad383a006876bc096bc266a1568eac6edfb7",
       "power": {
-        "ac": false,
-        "battery_pct": 89
+        "ac": true,
+        "battery_pct": 90
       }
     },
     "method": "tail-latency + deadline-miss + drop-rate + measured throughput vs required FPS; medians never decide alone"

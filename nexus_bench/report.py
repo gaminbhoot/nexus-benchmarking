@@ -374,7 +374,10 @@ def _provenance_block(results, prov):
     return f"<pre>{json.dumps(prov, indent=2, default=str)[:4000]}</pre>"
 
 def _limitations_block(results):
-    items = ["Depth-estimation network: NOT TESTED (occupancy-grid proxy in rover agent)",
+    items = ["Reference (not production) workload: YOLO26m reference weights + "
+             "reference Re-ID CNN. Production checkpoints need a Production "
+             "Qualification (same harness, your weights via engineering CLI).",
+             "Depth-estimation network: NOT TESTED (occupancy-grid proxy in rover agent)",
              "Mission planner: representative allocation proxy only",
              "Physical wireless link: NOT TESTED (loopback stack cost only)"]
     sus = ((results.get("sustained", {}) or {}).get("config") or {}).get("limitations", [])
