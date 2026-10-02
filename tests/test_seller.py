@@ -58,6 +58,17 @@ def _patch_manifest(monkeypatch, pkg, manifest):
     return pkg
 
 
+def test_official_model_bundled():
+    """The release is Mode-A self-contained: the official model MUST be in git.
+    (*.pt is git-ignored globally, so this needs an explicit force-add.)"""
+    import os
+    p = os.path.join(A.package_root(), "assets", "model", "yolo26m.pt")
+    assert os.path.exists(p), "official model missing from checkout — release is not self-contained"
+    entry = next(a for a in A.OFFICIAL_MANIFEST["assets"] if a["type"] == "model")
+    assert os.path.getsize(p) == entry["size"]
+    assert A.sha256_file(p) == entry["sha256"]
+
+
 def test_assets_verify_ok_and_detect_corruption(tmp_path, monkeypatch):
     pkg, manifest = _make_test_package(tmp_path)
     _patch_manifest(monkeypatch, pkg, manifest)
