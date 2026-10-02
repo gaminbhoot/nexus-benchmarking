@@ -412,6 +412,23 @@ def test_all_text_opens_declare_encoding():
     assert not bad, bad
 
 
+# --- package metadata matches the pinned lock ---
+def test_pyproject_matches_requirements_lock():
+    import re
+    lock = {}
+    for line in open("requirements.lock", encoding="utf-8"):
+        line = line.strip()
+        if line and not line.startswith("#") and "==" in line:
+            k, v = line.split("==", 1)
+            lock[k.lower()] = v.strip()
+    proj = open("pyproject.toml", encoding="utf-8").read()
+    for dep in re.findall(r'"([a-zA-Z0-9_-]+)(>=|==)([^"]+)"', proj):
+        name, op, ver = dep
+        if name.lower() in lock:
+            assert op == "==" and ver == lock[name.lower()], \
+                f"{name}: pyproject {op}{ver} != lock {lock[name.lower()]}"
+
+
 def test_report_and_summary_generate(tmp_path):
     from nexus_bench import report as R
     r = _passing_base()
