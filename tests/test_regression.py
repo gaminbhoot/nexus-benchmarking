@@ -1,5 +1,6 @@
 """Regression tests for every previously identified gate/fail-open issue."""
 import json
+import os
 import sys
 
 import numpy as np
@@ -442,6 +443,88 @@ def test_doctor_runs_structured():
     for required in ("python_version", "python_arch", "venv_module", "pip",
                      "disk", "internet_pypi", "release_files", "official_assets"):
         assert required in names
+
+
+# --- midway stop: STOP file aborts with partial evidence, never PASS ---
+def test_stop_file_aborts_run(tmp_path, monkeypatch):
+    from nexus_bench import cli as C
+    from nexus_bench import gate as G
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "STOP").write_text("")
+    cfg = {"seed": 0, "warmup": 1, "repeats": 1, "duration_s": 1, "device": "cpu",
+           "imgsz": 160, "batch": 1, "precision": "fp32", "model": "",
+           "video": "", "image_dir": "", "out": str(tmp_path / "r")}
+    paths, results, code = C.controller_run(
+        cfg, ["comms", "cpu"], dict(G.DEFAULT_GATE), req_fps=15, runs=1,
+        timeout=60, cblas=None, out=str(tmp_path / "r"))
+    assert results["comms"]["status"] == S.ABORTED
+    assert results["cpu"]["status"] == S.NOT_RUN
+    assert results["_gate"]["verdict"] != S.PASS
+    assert (tmp_path / "STOP").exists()  # runner never deletes the user's file
+
+
+def test_worker_kill_on_ctrl_c(monkeypatch):
+    import subprocess as _sp
+    from nexus_bench import cli as C
+
+    class FakeProc:
+        killed = False
+
+        def wait(self, timeout=None):
+            if not FakeProc.killed:
+                raise KeyboardInterrupt()
+            return 0
+
+        def kill(self):
+            FakeProc.killed = True
+
+    monkeypatch.setattr(_sp, "Popen", lambda *a, **k: FakeProc())
+    try:
+        C._run_worker("nexus_bench.comms_bench", {"seed": 0}, 60, None)
+    except KeyboardInterrupt:
+        pass
+    else:
+        raise AssertionError("KeyboardInterrupt must propagate after killing worker")
+    assert FakeProc.killed
+
+
+def test_reveal_in_file_manager(monkeypatch, tmp_path):
+    from nexus_bench import wizard as W
+    import platform as _pf
+    import subprocess as _sp
+    calls = []
+    monkeypatch.setattr(_sp, "Popen", lambda *a, **k: calls.append(a[0]) or True)
+    target = tmp_path / "r.html"
+    target.write_text("x")
+    monkeypatch.setattr(_pf, "system", lambda: "Windows")
+    assert W.reveal_in_file_manager(str(target)) is True
+    assert calls[0][:2] == ["explorer", "/select,"]
+    calls.clear()
+    monkeypatch.setattr(_pf, "system", lambda: "Darwin")
+    assert W.reveal_in_file_manager(str(target)) is True
+    assert calls[0][:2] == ["open", "-R"]
+    assert W.reveal_in_file_manager(str(tmp_path / "missing")) is False
+    def boom(*a, **k):
+        raise OSError("headless")
+    monkeypatch.setattr(_sp, "Popen", boom)
+    assert W.reveal_in_file_manager(str(target)) is False
+
+
+def test_sustained_stop_flag(tmp_path, monkeypatch):
+    import nexus_bench.sustained_bench as s
+    from nexus_bench import assets as A
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "STOP").write_text("")
+    cfg = {"seed": 0, "warmup": 1, "repeats": 1, "duration_s": 30, "device": "cpu",
+           "imgsz": 160, "batch": 1, "precision": "fp32",
+           "model": os.path.join(A.package_root(), "assets", "model", "yolo26m.pt"),
+           "video": "", "image_dir": "",
+           "sustained_duration_s": 600, "sustained_window_s": 60,
+           "target_fps": 5.0, "concurrency": "separate-contexts",
+           "leak_threshold_mb": 300, "req_fps": 5}
+    r = s.run(cfg)
+    per = r["tests"]["per_agent"]
+    assert all(v["stopped_early"] is True for v in per.values())
 
 
 def test_report_and_summary_generate(tmp_path):

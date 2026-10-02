@@ -11,7 +11,14 @@ NEXUS HARDWARE QUALIFICATION
 4. Do not close the application while the test is running
    (about 10 minutes, plus setup).
 5. Wait for the final report (it opens automatically).
+   The folder containing your ZIP file also opens by itself, and the
+   exact file paths are printed in the window.
 6. Send the generated NEXUS_Qualification_....zip file to the buyer.
+
+To STOP the test early (if something looks wrong):
+press Ctrl+C in this window, OR create an empty file named STOP
+in the same folder as the launcher. Already-finished measurements
+are still saved, and the report will say ABORTED — never PASS.
 
 If the black window closes immediately without testing anything:
 open the file nexus_launcher.log (next to the launcher, or on the

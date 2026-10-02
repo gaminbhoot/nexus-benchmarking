@@ -20,6 +20,15 @@ NOT_RUN = "NOT_RUN"
 
 GATE_ELIGIBLE = {FULL}
 
+STOP_FILES = ("STOP", "STOP_NEXUS", "STOP.txt")
+
+def stop_requested():
+    """File-based stop: creating a file named STOP next to the launcher aborts
+    the run (for when Ctrl+C is impractical). Checked between modules and
+    inside long loops."""
+    import os
+    return any(os.path.exists(f) for f in STOP_FILES)
+
 # Purchase-gate verdicts (module/workload level and overall).
 PASS = "PASS"
 PASS_WITH_HEADROOM = "PASS_WITH_HEADROOM"

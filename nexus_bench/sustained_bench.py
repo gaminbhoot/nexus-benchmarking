@@ -117,7 +117,11 @@ def _agent(name, width, do_obstacle, ctx, embed_model, dev, cfg, tele_q, stats,
     tr, prev = Tracker(), None
     events, qdepth, ooms = [], [], 0
     t_end = time.time() + duration_s
+    stopped_early = False
     while time.time() < t_end:
+        if S.stop_requested():
+            stopped_early = True
+            break
         item = src.get(timeout=2.0)
         if item is None:
             break
@@ -176,6 +180,7 @@ def _agent(name, width, do_obstacle, ctx, embed_model, dev, cfg, tele_q, stats,
     src.stop()
     stats.update({"events": events, "qdepth": qdepth, "acct": src.acct.as_dict(),
                   "oom_events": ooms, "conservation": src.acct.check_conservation(),
+                  "stopped_early": stopped_early,
                   "replay_count": src.replay_count,
                   "source_duration_s": src.source_duration_s,
                   "actual_duration_s": round(time.time() - t_agent0, 1),
@@ -344,6 +349,7 @@ def run(cfg):
                     100 * sum(1 for v in lat_all if v > deadline_ms) / len(lat_all), 2) if lat_all else 0
                 d["oom_events"] = s["oom_events"]
                 d["oom_kind"] = "WORKLOAD_OOM" if s["oom_events"] else None
+                d["stopped_early"] = bool(s.get("stopped_early"))
                 d["source"] = s["source"]
                 d["source_kind"] = s.get("source_kind")
                 d["real_pixels"] = s["real_pixels"]

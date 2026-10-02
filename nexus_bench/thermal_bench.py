@@ -74,6 +74,10 @@ def run(cfg):
         t_end = t0 + duration
         while time.time() < t_end:
             tele = mon.samples[-1] if mon.samples else None
+            if S.stop_requested():
+                out["errors"].append("stopped by user (STOP file or Ctrl+C)")
+                out["status"] = S.ABORTED
+                break
             if not guard.ok(tele):
                 out["errors"].append(f"aborted: {guard.reason}")
                 out["status"] = S.ABORTED

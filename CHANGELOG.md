@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0 — first complete seller product
+
+- Midway stop: Ctrl+C kills the worker (nothing orphaned) and packages partial
+  evidence as ABORTED; a STOP file next to the launcher does the same between
+  modules and inside long runs (flagged per-agent as stopped_early).
+- Results are unmissable: absolute report/ZIP/folder paths printed, ZIP
+  revealed in Explorer/Finder/file browser, HTML auto-opened.
+- Diagnose-first launchers: `nexus-bench doctor` + staged WHAT/WHAT-TO-DO
+  failures, venv health (not existence), exit-code propagation.
+
 ## 0.8.1 — seller launcher that diagnoses instead of flashing
 
 - `nexus-bench doctor`: pre-install environment check (version/arch/venv/pip/

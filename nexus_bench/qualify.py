@@ -252,12 +252,21 @@ def run_qualify(root=None, extended=False, assume_yes=False, out_parent=".",
                               "nexus_bench.release", fromlist=["x"]).QUALIFICATION_VERSION}
     results["_power_condition"] = "BATTERY" if on_battery else ("AC" if ac is True else "unknown")
     folder, zipp = package_results(paths, results, parent=out_parent)
+    html = os.path.abspath(os.path.join(folder, "NEXUS_Qualification_Report.html"))
+    folder_abs, zipp_abs = os.path.abspath(folder), os.path.abspath(zipp)
     say("\n" + "=" * 55)
     say("QUALIFICATION COMPLETE")
     say("=" * 55)
     say(f"\nRESULT: {results.get('_gate', {}).get('verdict', '?')}")
-    say(f"\nReport:\n{os.path.join(folder, 'NEXUS_Qualification_Report.html')}")
-    say(f"\nEvidence package:\n{zipp}")
+    say("\nYour result files (everything is inside the folder):")
+    say(f"  Report to read:  {html}")
+    say(f"  File to send:    {zipp_abs}")
+    say(f"  Whole folder:    {folder_abs}")
+    from nexus_bench.wizard import reveal_in_file_manager
+    if reveal_in_file_manager(zipp_abs):
+        say("\n(The folder with your ZIP file has been opened for you.)")
+    else:
+        say("\n(Open the folder path above to find your ZIP file.)")
     try:
         webbrowser.open("file://" + os.path.abspath(
             os.path.join(folder, "NEXUS_Qualification_Report.html")))

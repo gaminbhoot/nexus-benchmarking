@@ -63,6 +63,28 @@ def _ask_video(role, videos, other_choice=None):
         return ""
     return pick
 
+def reveal_in_file_manager(path):
+    """Show the finished report/ZIP in the OS file manager (Explorer/Finder/
+    file browser). Never raises: headless machines simply skip it. Returns True
+    if a reveal command was launched."""
+    import platform
+    import subprocess
+    ap = os.path.abspath(path)
+    if not os.path.exists(ap):
+        return False
+    try:
+        system = platform.system()
+        if system == "Windows":
+            subprocess.Popen(["explorer", "/select,", ap])
+        elif system == "Darwin":
+            subprocess.Popen(["open", "-R", ap])
+        else:
+            target = ap if os.path.isdir(ap) else os.path.dirname(ap)
+            subprocess.Popen(["xdg-open", target])
+        return True
+    except Exception:
+        return False
+
 def run_wizard():
     from nexus_bench import profiler
     from nexus_bench.profiles import get

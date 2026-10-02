@@ -94,8 +94,14 @@ def _worker_env(cblas):
             env[k] = str(cblas)
     return env
 
+STOP_FILES = S.STOP_FILES
+
+def stop_requested():
+    return S.stop_requested()
+
 def _run_worker(submod, cfg, timeout_s, cblas):
-    """Fresh process per module. Returns (result_dict, controller_telemetry)."""
+    """Fresh process per module. Returns (result_dict, controller_telemetry).
+    Ctrl+C kills the worker first so nothing is orphaned, then reports ABORTED."""
     with tempfile.TemporaryDirectory() as td:
         cfg_p = os.path.join(td, "cfg.json")
         out_p = os.path.join(td, "res.json")
@@ -114,6 +120,14 @@ def _run_worker(submod, cfg, timeout_s, cblas):
             return ({"module": submod, "status": S.ABORTED, "tests": {},
                      "errors": [f"supervisor timeout after {timeout_s}s (worker killed)"]},
                     mon.summary())
+        except KeyboardInterrupt:
+            try:
+                proc.kill()
+                proc.wait(timeout=30)
+            except Exception:
+                pass
+            mon.stop()
+            raise
         mon.stop()
         tele = mon.summary()
         if os.path.exists(out_p):
@@ -200,11 +214,24 @@ def controller_run(cfg, mods, gate_cfg, req_fps=15, runs=1, timeout=None,
                "_provenance": provenance.manifest(cfg),
                "_power": power_mod.collect(cfg.get("device", "auto"))}
     cancelled = False
+    stop_reason = ""
     total = sum(runs for m in mods if m != "system")
     idx = 0
+    print("To stop early: press Ctrl+C, or create a file named STOP in this folder.",
+          flush=True)
     for m in mods:
         if m == "system":
             continue
+        if stop_requested():
+            stop_reason = "stopped by user (STOP file)"
+            cancelled = True
+            results[m] = {"module": m, "status": S.ABORTED, "tests": {},
+                          "errors": [stop_reason]}
+            for m2 in mods[mods.index(m) + 1:]:
+                if m2 != "system":
+                    results[m2] = {"module": m2, "status": S.NOT_RUN, "tests": {},
+                                   "errors": ["not reached after user stop"]}
+            break
         for rep in range(runs):
             key = m if runs == 1 else f"{m}__run{rep + 1}"
             idx += 1
@@ -217,8 +244,9 @@ def controller_run(cfg, mods, gate_cfg, req_fps=15, runs=1, timeout=None,
                 res["controller_telemetry"] = tele
                 results[key] = res
             except KeyboardInterrupt:
+                stop_reason = "cancelled by user (Ctrl+C — worker killed, nothing orphaned)"
                 results[key] = {"module": m, "status": S.ABORTED, "tests": {},
-                                "errors": ["cancelled by user (supervisor)"]}
+                                "errors": [stop_reason]}
                 for m2 in mods[mods.index(m) + 1:]:
                     if m2 != "system":
                         results[m2] = {"module": m2, "status": S.NOT_RUN, "tests": {},
@@ -230,6 +258,9 @@ def controller_run(cfg, mods, gate_cfg, req_fps=15, runs=1, timeout=None,
                                 "errors": [f"supervisor: {e}"]}
         if cancelled:
             break
+    if stop_reason:
+        print(f"[nexus-bench] {stop_reason} — packaging partial results (never a PASS).",
+              flush=True)
     results = gate_mod.aggregate_runs(results)  # worst-case across --runs, individuals kept
     gate_res = gate_mod.evaluate({k: v for k, v in results.items() if "__run" not in k}, gate_cfg)
     results["_gate"] = gate_res
