@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.1 — seller launcher that diagnoses instead of flashing
+
+- `nexus-bench doctor`: pre-install environment check (version/arch/venv/pip/
+  disk/internet/assets) with OK/FAIL + exact fix per line; launchers run it
+  first and stop with a readable message instead of a flash-and-close.
+- Launchers verify venv HEALTH (imports + version), not mere existence;
+  broken installs are discarded and rebuilt automatically; every pip step is
+  error-checked (including the editable install); import verification after
+  install; qualification exit code (0/2/3/4) propagated to the caller.
+- Setup announces the ~2 GB one-time download; failures print WHAT happened /
+  WHAT it means / WHAT to do plus the last log lines and log path.
+- All file I/O declares UTF-8 (Windows cp1252 crash class eliminated, locked
+  by static test).
+
 ## 0.8.0 — YOLO26m production workload (Qualification v2.0)
 
 - Official workload is now **YOLO26m** (21.9M params measured, 44 MB,
