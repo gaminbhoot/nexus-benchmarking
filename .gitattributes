@@ -1,0 +1,8 @@
+# Qualification assets are byte-pinned: Git must never convert line endings
+# inside them (Windows runners default to CRLF, which would break SHA-256).
+assets/** -text
+*.pt -text
+*.mp4 -text
+*.zip -text
+*.engine -text
+*.onnx -text

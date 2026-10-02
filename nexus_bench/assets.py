@@ -143,6 +143,11 @@ def _tree_hash(tree_dir):
     paths = []
     for r, _, fs in os.walk(tree_dir):
         for fn in fs:
+            # Runtime caches are not qualification content: ultralytics
+            # regenerates val.cache on first use; hashing it would make
+            # verification order-dependent (fail AFTER a legitimate run).
+            if fn.endswith(".cache") or fn == ".DS_Store":
+                continue
             paths.append(os.path.join(r, fn))
     if not paths:
         return None
