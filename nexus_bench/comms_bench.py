@@ -12,6 +12,7 @@ import struct
 import threading
 import time
 
+from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.stats import summarize
 
@@ -97,7 +98,7 @@ def _loopback_rtt(n=200, size=64, host="127.0.0.1", port=0):
 
 def run(cfg):
     n = max(500, cfg.get("repeats", 20) * 50)
-    out = {"module": "comms", "config": cfg, "tests": {}, "errors": []}
+    out = {"module": "comms", "config": cfg, "tests": {}, "errors": [], "status": S.FULL}
     with Monitor() as mon:
         try:  # real MAVLink serialize throughput
             t0 = time.perf_counter()

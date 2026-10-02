@@ -9,6 +9,7 @@ import os
 import time
 import numpy as np
 
+from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.profiles import resolve_device
 
@@ -18,7 +19,7 @@ def run(cfg):
     import psutil
     dev = resolve_device(cfg.get("device", "auto"))
     out = {"module": "memory", "config": {**cfg, "resolved_device": dev},
-           "tests": {}, "errors": []}
+           "tests": {}, "errors": [], "status": S.FULL}
     with Monitor() as mon:
         try:
             for mb in (16, 64, 256):

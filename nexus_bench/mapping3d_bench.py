@@ -9,6 +9,7 @@ labelled `preprocessing_microbench`, not odometry.
 import time
 import numpy as np
 
+from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.stats import summarize
 
@@ -89,7 +90,7 @@ def run(cfg):
     rng_seed = cfg.get("seed", 0)
     repeats = max(3, cfg.get("repeats", 10))
     out = {"module": "mapping3d", "config": {**cfg, "method": "two-view ORB->E->pose->triangulate vs GT"},
-           "tests": {}, "errors": []}
+           "tests": {}, "errors": [], "status": S.FULL}
     with Monitor() as mon:
         try:
             img0, img1, K, R_gt, t_gt = _vo_pair(seed=rng_seed)

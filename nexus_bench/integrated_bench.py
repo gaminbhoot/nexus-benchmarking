@@ -61,7 +61,7 @@ def _run_agent(name, width, obst, skeys, ctx, model, dev, cfg, q, stats,
                target_fps, duration_s):
     """One agent: paced source -> process -> telemetry queue, fully accounted."""
     src = PacedSource(cfg, target_fps=target_fps,
-                      queue_size=8, source_keys=skeys).start()
+                      queue_size=8, source_keys=skeys, loop=True).start()
     stats["source"] = src.tag
     stats["source_kind"] = src.source_kind
     stats["real_pixels"] = src.real_pixels

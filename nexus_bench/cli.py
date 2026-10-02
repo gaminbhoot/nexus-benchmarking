@@ -26,6 +26,7 @@ MODULES = {"cpu": "nexus_bench.cpu_bench", "gpu": "nexus_bench.gpu_bench",
            "backends": "nexus_bench.backends_bench", "accuracy": "nexus_bench.accuracy_bench",
            "coldstart": "nexus_bench.coldstart_bench", "decode": "nexus_bench.decode_bench",
            "matrix": "nexus_bench.matrix_bench", "sustained": "nexus_bench.sustained_bench",
+           "preflight": "nexus_bench.preflight_bench",
            "system": None}
 
 def _load_profile(name_or_path, overrides):
@@ -79,6 +80,8 @@ def _args():
                    help="pin worker BLAS threads (default: inherit)")
     p.add_argument("--worker-timeout", type=float, default=None, dest="worker_timeout_s")
     p.add_argument("--gate", default=None, help="path to gate YAML (acceptance criteria)")
+    p.add_argument("--extended", action="store_true", help="900 s sustained (with qualify)")
+    p.add_argument("--yes", action="store_true", help="assume yes to prompts (with qualify)")
     p.add_argument("--gate-strict", action="store_true", dest="gate_strict",
                    help="exit 3 unless the gate verdict is PASS/PASS_WITH_HEADROOM")
     p.add_argument("--list-profiles", action="store_true")
@@ -128,6 +131,11 @@ def main():
     if mods == ["wizard"]:
         from nexus_bench.wizard import run_wizard
         return run_wizard()
+    if mods == ["qualify"] or mods == ["qualify-extended"]:
+        from nexus_bench.qualify import run_qualify
+        run_qualify(extended=(mods == ["qualify-extended"] or a.extended),
+                    assume_yes=a.yes)
+        return 0
     for m in mods:
         if m not in MODULES:
             print(f"unknown module {m!r}; choose from {sorted(MODULES)}", file=sys.stderr)
@@ -178,6 +186,10 @@ def controller_run(cfg, mods, gate_cfg, req_fps=15, runs=1, timeout=None,
     import random as _random
     import numpy as _np
     timeout = timeout or max(180.0, (cfg.get("duration_s", 60) + 180))
+    # The longest single module bounds the timeout: a 600 s sustained worker
+    # must never be killed by a timeout derived from the short module duration.
+    longest = max(cfg.get("duration_s", 60), cfg.get("sustained_duration_s", 0))
+    timeout = max(timeout, longest + 300.0)
     if header:
         print(header + f" timeout={timeout}s")
     results = {"_profile": profiler.profile(), "_config": cfg,

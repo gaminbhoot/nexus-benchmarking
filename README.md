@@ -5,6 +5,23 @@ It answers one question: **given this exact machine, can the exact NEXUS workloa
 run continuously within latency, accuracy, memory, thermal, and power margins?**
 — and it refuses to pass when the evidence is missing.
 
+## Seller path (no technical knowledge needed)
+
+Read **`README_FIRST.txt`**: double-click `NEXUS_Qualification` (`.bat` Windows,
+`.command` macOS, `.sh` Linux), connect the charger if asked, wait ~10 minutes,
+send the generated ZIP to the buyer. The seller provides **only the computer** —
+model, videos, validation data, profile, and gate all come from the official
+package (`assets/` + manifest, SHA-256 verified, bootstrap from pinned URLs if
+a file is missing). `nexus-bench qualify [--extended]` is the same appliance
+flow for terminals.
+
+## Developer path
+
+`nexus-bench ...` CLI with profiles/custom models/videos/matrices (see below).
+`run_nexus_bench.{sh,bat}` are the developer launchers. `tools/` builds official
+assets (`make_official_assets.py`, deterministic) and release identity
+(`make_release.py` → `release/release.json`; never commit it).
+
 ## How a Seller Runs the Qualification (no Python knowledge needed)
 
 1. **Get the folder** on the laptop (download + extract the ZIP, or clone the repo).

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.5.0 — plug-and-play qualification product
+
+- Seller appliance (`nexus-bench qualify`, launchers `NEXUS_Qualification.*`):
+  hardware display → official assets → power/charger prompt → fixed official
+  config → pre-flight (aborts before 10 min) → baseline sanity → run → post
+  sanity/recovery → package ZIP → auto-open. Interruptions yield ABORTED, never PASS.
+- Official assets (`assets/` + manifest + `assets.py`): pinned YOLO11n model,
+  seeded UAV/rover sequences (byte-deterministic generator), COCO8 accuracy set —
+  every file SHA-256 verified; bootstrap from hardcoded trusted URLs on failure;
+  random user files never used. Replays loop short clips with replay counts.
+- New `preflight` module (model/backend/precision/assets/decode/RAM/disk checks).
+- Gate: worst-window sustained criteria, actual-vs-requested duration proof,
+  deployment-identity match across modules, conservation requirement, AC/battery
+  policy, sustained thermal telemetry, hardware mismatch FAIL, dirty-tree
+  INCONCLUSIVE (releases exempt via release identity, no Git needed).
+- Report: hero verdict + Why + criteria-sourced summary table, sustained charts,
+  deployment identity, asset verification, LIMITATIONS, power honesty,
+  qualification version stamps, plain-text seller summary, packaged folder + ZIP.
+- Provenance: release.json identity (no .git required), full SHA-256 of all
+  inputs. `tools/make_release.py` stamps immutable releases.
+- Fixed: worker timeout < sustained duration; queue-drop/delivered accounting;
+  runs aggregation preserving window series; report limits from gate criteria;
+  launcher pipefail masking; missing module statuses; thermal window order +
+  deployment imgsz; `full_stack [all]`; vision adapter. 90+ tests green.
+
 ## 0.4.0 — sustained qualification + seller operation
 
 - New `sustained` module (600/900 s): dual-agent representative workload

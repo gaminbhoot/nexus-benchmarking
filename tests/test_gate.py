@@ -24,25 +24,39 @@ def _thermal_ok():
 
 def _acc_ok():
     return {"module": "accuracy", "status": S.FULL,
+            "config": {"model": "m.pt", "precision": "fp32", "resolved_device": "cuda",
+                       "imgsz": 640, "batch": 1},
             "tests": {"map_comparison": {"candidate": "fp16", "map50_drop_abs": 0.01,
                                          "map50_drop_rel": 0.02}}, "errors": []}
 
-def _sustained_ok(fps=12.0):
+def _sustained_ok(fps=16.0):
+    agent = {"steady_fps": fps, "final_fps": fps, "drop_pct": 1.0,
+             "degradation_pct": 5.0, "oom_events": 0, "min_window_fps": fps,
+             "final_window_fps": fps, "max_p95_ms": 55.0, "max_window_p99_ms": 90.0,
+             "max_window_miss_pct": 2.0, "max_window_drop_pct": 1.0,
+             "conservation_ok": True, "actual_duration_s": 600,
+             "requested_duration_s": 600, "duration_complete": True}
     return {"module": "sustained", "status": S.FULL,
-            "config": {"duration_s": 600},
-            "tests": {
-                "per_agent": {
-                    "uav": {"steady_fps": fps, "final_fps": fps, "drop_pct": 1.0,
-                            "degradation_pct": 5.0, "oom_events": 0},
-                    "rover": {"steady_fps": fps, "final_fps": fps, "drop_pct": 1.0,
-                              "degradation_pct": 5.0, "oom_events": 0}},
-                "memory_growth": {"growth": 10.0, "leak_suspected": False}},
+            "config": {"duration_s": 600, "model": "m.pt", "precision": "fp32",
+                       "resolved_device": "cuda", "imgsz": 640, "batch": 1},
+            "tests": {"per_agent": {"uav": dict(agent), "rover": dict(agent)},
+                      "memory_growth": {"growth": 10.0, "leak_suspected": False},
+                      "resource_evolution": {
+                          "vram_pct": {"initial": 60.0, "max": 70.0, "final": 65.0},
+                          "gpu_temp_c": {"initial": 60.0, "max": 75.0, "final": 70.0,
+                                         "per_window": [60.0, 70.0, 75.0]}}},
             "errors": []}
 
+def _env():
+    return {"_power": {"signals": {"ac_connected": {"value": True, "how": "measured"}}},
+            "_provenance": {"fingerprints": {"model": "abc123"}}}  # noqa: E731
+
 def _base():
-    return {"pipeline": _full_pipeline(), "integrated": _full_integrated(),
-            "memory": _full_memory(), "thermal": _thermal_ok(), "accuracy": _acc_ok(),
-            "sustained": _sustained_ok()}
+    d = {"pipeline": _full_pipeline(), "integrated": _full_integrated(),
+         "memory": _full_memory(), "thermal": _thermal_ok(), "accuracy": _acc_ok(),
+         "sustained": _sustained_ok()}
+    d.update(_env())
+    return d
 
 def test_gate_pass_with_headroom():
     g = G.evaluate(_base())
@@ -51,6 +65,7 @@ def test_gate_pass_with_headroom():
 def test_gate_partial_evidence_is_not_pass():
     r = _base()
     r["pipeline"] = dict(r["pipeline"], status=S.PARTIAL)
+    r["sustained"] = dict(r["sustained"], status=S.PARTIAL)
     g = G.evaluate(r)
     assert g["verdict"] in (S.FAIL, S.INCONCLUSIVE)
 
@@ -61,7 +76,7 @@ def test_gate_missing_module_is_not_pass():
 
 def test_gate_tail_violation_fails():
     r = _base()
-    r["pipeline"] = _full_pipeline(p95=200.0)
+    r["sustained"]["tests"]["per_agent"]["uav"]["max_p95_ms"] = 200.0
     g = G.evaluate(r)
     assert g["verdict"] in (S.FAIL, S.INCONCLUSIVE)
     assert any(not c["pass"] and "p95" in c["check"] for c in g["checks"])

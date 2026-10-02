@@ -40,6 +40,25 @@ def evaluate(results, gate=None):
     for wname in ("uav", "rover"):
         crit = w.get(wname, {})
         res = results.get("pipeline", {})
+        sus = results.get("sustained", {})
+        # Prefer sustained per-agent evidence (long-run truth) over the short
+        # pipeline probe; the pipeline is the fallback, not a duplicate vote.
+        sus_per = ((sus.get("tests") or {}).get("per_agent") or {}).get(wname) \
+            if _eligible(sus) else None
+        if sus_per is not None:
+            fps = sus_per.get("steady_fps", 0) or 0
+            _check(f"{wname}.evidence_sustained", True, "sustained FULL per-agent", checks,
+                   kind="measured")
+            overall &= _check(f"{wname}.fps>={crit.get('min_fps', req)}", fps >= crit.get("min_fps", req),
+                              f"sustained steady {fps} fps", checks)
+            p95 = sus_per.get("max_p95_ms")
+            overall &= _check(f"{wname}.max_p95_ms<={crit.get('max_p95_ms', 1e9)}",
+                              p95 is not None and p95 <= crit.get("max_p95_ms", 1e9),
+                              f"sustained worst-window p95 {p95}ms", checks)
+            overall &= _check(f"{wname}.max_drop_pct<={crit.get('max_drop_pct', 100)}",
+                              (sus_per.get("max_window_drop_pct", 0) or 0) <= crit.get("max_drop_pct", 100),
+                              f"worst-window drop {sus_per.get('max_window_drop_pct')}%", checks)
+            continue
         ok = _eligible(res)
         _check(f"{wname}.evidence_full", ok,
                f"pipeline status={res.get('status')}", checks, kind="missing")
@@ -91,14 +110,45 @@ def evaluate(results, gate=None):
             fps = a.get("steady_fps", a.get("final_fps", 0)) or 0
             overall &= _check(f"sustained.{agent}.steady_fps>={sc.get('min_fps_each', 10)}",
                               fps >= sc.get("min_fps_each", 10), f"{fps} fps", checks)
+            # Worst windows decide, never the median alone.
+            overall &= _check(f"sustained.{agent}.min_window_fps>={sc.get('min_fps_each', 10)}",
+                              (a.get("min_window_fps", 0) or 0) >= sc.get("min_fps_each", 10),
+                              f"worst window {a.get('min_window_fps')} fps", checks)
+            overall &= _check(f"sustained.{agent}.final_window_fps>={sc.get('min_fps_each', 10)}",
+                              (a.get("final_window_fps", 0) or 0) >= sc.get("min_fps_each", 10),
+                              f"final window {a.get('final_window_fps')} fps", checks)
+            overall &= _check(f"sustained.{agent}.max_window_p95<={sc.get('max_p95_ms', 1e9)}",
+                              a.get("max_p95_ms") is not None and
+                              a.get("max_p95_ms") <= sc.get("max_p95_ms", 1e9),
+                              f"worst window p95 {a.get('max_p95_ms')}ms", checks)
+            if sc.get("max_p99_ms") is not None:
+                overall &= _check(f"sustained.{agent}.max_window_p99<={sc.get('max_p99_ms')}",
+                                  a.get("max_window_p99_ms") is not None and
+                                  a.get("max_window_p99_ms") <= sc.get("max_p99_ms"),
+                                  f"worst window p99 {a.get('max_window_p99_ms')}ms", checks)
             overall &= _check(f"sustained.{agent}.drop_pct<={sc.get('max_drop_pct', 5)}",
                               (a.get("drop_pct", 0) or 0) <= sc.get("max_drop_pct", 5),
                               f"{a.get('drop_pct')}%", checks)
+            overall &= _check(f"sustained.{agent}.max_window_drop<={sc.get('max_drop_pct', 5)}",
+                              (a.get("max_window_drop_pct", 0) or 0) <= sc.get("max_drop_pct", 5),
+                              f"worst window {a.get('max_window_drop_pct')}%", checks)
+            overall &= _check(f"sustained.{agent}.max_window_miss<={sc.get('max_miss_pct', 5)}",
+                              (a.get("max_window_miss_pct", 0) or 0) <= sc.get("max_miss_pct", 5),
+                              f"worst window {a.get('max_window_miss_pct')}%", checks)
             overall &= _check(f"sustained.{agent}.degradation<={sc.get('max_degradation_pct', 15)}",
                               (a.get("degradation_pct", 0) or 0) <= sc.get("max_degradation_pct", 15),
                               f"{a.get('degradation_pct')}%", checks)
             overall &= _check(f"sustained.{agent}.no_workload_oom",
                               not a.get("oom_events"), f"oom={a.get('oom_events')}", checks)
+            # Duration proof: actual execution, not configured intent.
+            overall &= _check(f"sustained.{agent}.actual_duration",
+                              a.get("duration_complete") is True,
+                              f"actual {a.get('actual_duration_s')}s vs requested "
+                              f"{a.get('requested_duration_s')}s", checks)
+            overall &= _check(f"sustained.{agent}.conservation",
+                              a.get("conservation_ok") is True,
+                              "frame accounting conserved" if a.get("conservation_ok") is True
+                              else "frame accounting FAILED — drops cannot be trusted", checks)
         dur = (sus.get("config") or {}).get("duration_s", 0)
         min_dur = sc.get("min_duration_s", 600)
         overall &= _check(f"sustained.duration>={min_dur}",
@@ -174,7 +224,8 @@ def evaluate(results, gate=None):
     # provenance: dirty tree policy + power coverage honesty.
     prov = results.get("_provenance", {}) or {}
     git = (prov.get("git") or {})
-    if gate.get("provenance", {}).get("forbid_dirty", False):
+    is_release = str(prov.get("distribution", "")).startswith("release")
+    if gate.get("provenance", {}).get("forbid_dirty", False) and not is_release:
         clean = git.get("dirty") is False
         overall &= _check("provenance.clean_tree", clean,
                           "UNRELEASED / DIRTY SOURCE — exact inputs not reproducible"
@@ -196,6 +247,54 @@ def evaluate(results, gate=None):
                           "no candidate-vs-baseline mAP comparison (INCONCLUSIVE, not pass)", checks,
                           kind="missing")
 
+    # deployment identity: accuracy, inference, sustained must qualify the SAME
+    # model + backend + precision + resolution + batch. Mixed identities fail.
+    def _dep_id(res):
+        c = (res.get("config") or {})
+        fp = ((results.get("_provenance") or {}).get("fingerprints") or {}).get("model", "?")
+        eff = c.get("effective_precision") or c.get("precision", {}).get("requested", "?") \
+            if isinstance(c.get("precision"), dict) else c.get("precision", "?")
+        be = c.get("resolved_device", "?")
+        return (f"model={str(fp)[:12]} backend={be} prec={eff} "
+                f"imgsz={c.get('imgsz', '?')} batch={c.get('batch', '?')}")
+    dep_ids = {m: _dep_id(results[m]) for m in ("inference", "sustained", "accuracy", "backends")
+               if isinstance(results.get(m), dict) and _eligible(results[m])}
+    if len(set(dep_ids.values())) > 1:
+        overall &= _check("deployment.identity_match", False,
+                          f"mixed deployment identities: {dep_ids} — accuracy of one "
+                          f"backend cannot qualify another", checks)
+    elif dep_ids:
+        _check("deployment.identity_match", True, f"single identity: {next(iter(dep_ids.values()))}",
+               checks)
+
+    # power condition: battery runs are marked, strict gate requires AC.
+    pw = ((results.get("_power") or {}).get("signals") or {})
+    ac = (pw.get("ac_connected") or {}).get("value")
+    if gate.get("power", {}).get("require_ac", True):
+        if ac is True:
+            _check("power.ac", True, "AC connected", checks)
+        elif ac is False:
+            overall &= _check("power.ac", False,
+                              "TEST CONDITION: BATTERY POWER — strict qualification "
+                              "requires AC (INCONCLUSIVE, not equivalent)", checks,
+                              kind="missing")
+        else:
+            overall &= _check("power.ac", False,
+                              "AC state unknown — cannot certify power condition", checks,
+                              kind="missing")
+
+    # sustained thermal evidence: the 10-minute workload's own telemetry counts,
+    # so a missing short thermal module is not the only path.
+    sus_evo = ((sus.get("tests") or {}).get("resource_evolution") or {})
+    st = sus_evo.get("gpu_temp_c") if isinstance(sus_evo.get("gpu_temp_c"), dict) else None
+    if st and st.get("max") is not None and _eligible(sus):
+        _check("sustained.thermal_telemetry", True,
+               f"sustained max temp {st['max']}C over {len(st.get('per_window', []))} windows",
+               checks)
+        if (st["max"] or 0) >= gate.get("sustained", {}).get("max_temp_c", 90):
+            overall &= _check("sustained.temp_limit", False,
+                              f"sustained max {st['max']}C over limit", checks)
+
     states = [r.get("status") for r in results.values()
               if isinstance(r, dict) and not str(r.get("module", "")).startswith("_")]
     hard_fail = any(s in (S.FAILED, S.ABORTED) for s in states if s)
@@ -204,7 +303,10 @@ def evaluate(results, gate=None):
     else:
         verdict = S.PASS_WITH_HEADROOM if _has_headroom(results, gate) else S.PASS
     return {"verdict": verdict, "req_fps": req, "checks": checks,
-            "states": {k: v for k, v in (S.gate_counts(results) or {}).items()}}
+            "states": {k: v for k, v in (S.gate_counts(results) or {}).items()},
+            "criteria": {"workloads": w, "sustained": gate.get("sustained", {}),
+                         "headroom": gate.get("headroom", {}),
+                         "accuracy": gate.get("accuracy", {})}}
 
 def _decisive_fail(checks):
     # Only MEASURED violations (or crashed modules) decide FAIL. Missing evidence
@@ -241,6 +343,16 @@ def aggregate_runs(results):
             groups[base].append((k, v))
     for base, runs in groups.items():
         runs = [v for _, v in sorted(runs)]
+        # Worst run = worst status first, then worst throughput (min fps).
+        def _worst_key(v):
+            fps = 1e18
+            for m in (v.get("tests") or {}).values():
+                if isinstance(m, dict):
+                    for fk in ("throughput_fps", "steady_fps", "final_fps", "batch_ips"):
+                        if isinstance(m.get(fk), (int, float)):
+                            fps = min(fps, m[fk])
+            return (_STATUS_RANK.get(v.get("status", S.NOT_RUN), -1), fps)
+        worst = min(runs, key=_worst_key)
         agg = {"module": base, "tests": {}, "errors": [],
                "status": min((v.get("status", S.NOT_RUN) for v in runs),
                              key=lambda s: _STATUS_RANK.get(s, -1)),
@@ -262,5 +374,13 @@ def aggregate_runs(results):
                 agg["tests"][tname][mk] = round(min(vals), 3)
             else:
                 agg["tests"][tname][mk] = round(sum(vals) / len(vals), 3)
+        # Non-numeric structures (window series, accounting, configs) come from
+        # the worst run intact — aggregation must never silently drop evidence.
+        for tname, m in (worst.get("tests") or {}).items():
+            for mk, mv in (m.items() if isinstance(m, dict) else []):
+                if not isinstance(mv, (int, float)) and mk not in agg["tests"].get(tname, {}):
+                    agg["tests"].setdefault(tname, {})[mk] = mv
+        if worst.get("config"):
+            agg["config"] = worst["config"]
         results[base] = agg
     return results

@@ -9,6 +9,7 @@ assignment (no scipy dependency) instead of Hungarian. Labelled honestly:
 import time
 import numpy as np
 
+from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.reid_embed import embed_crops, load_embedder
 from nexus_bench.profiles import resolve_device
@@ -185,7 +186,7 @@ def run(cfg):
     out = {"module": "tracking",
            "config": {**cfg, "resolved_device": dev,
                       "method": "deepsort_style_greedy (Kalman + appearance cascade; greedy, not Hungarian)"},
-           "tests": {}, "errors": []}
+           "tests": {}, "errors": [], "status": S.FULL}
     with Monitor() as mon:
         try:
             model, tag = load_embedder(dev, (cfg.get("reid_model") or "").strip())

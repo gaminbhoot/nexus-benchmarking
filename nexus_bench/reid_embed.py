@@ -11,6 +11,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.profiles import resolve_device
 from nexus_bench.stats import summarize
@@ -68,7 +69,7 @@ def embed_crops(model, crops, dev):
 def run(cfg):
     dev = resolve_device(cfg.get("device", "auto"))
     out = {"module": "reid", "config": {**cfg, "resolved_device": dev},
-           "tests": {}, "errors": []}
+           "tests": {}, "errors": [], "status": S.FULL}
     with Monitor() as mon:
         try:
             model, tag = load_embedder(dev, (cfg.get("reid_model") or "").strip())

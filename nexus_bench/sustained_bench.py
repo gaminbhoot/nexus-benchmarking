@@ -58,14 +58,49 @@ def _growth(first_med, last_med, leak_threshold):
     return {"first": first_med, "last": last_med, "growth": round(growth, 2),
             "leak_suspected": bool(growth > leak_threshold)}
 
+def _trajectory(per_window, leak_threshold_mb=300):
+    """Memory trajectory verdict from the full window series (not one delta):
+    slope (least-squares MB/window), monotonic runs, absolute growth."""
+    vals = [v for v in (per_window or []) if v is not None]
+    if len(vals) < 3:
+        return {"verdict": "INSUFFICIENT DATA", "slope_mb_per_window": None,
+                "growth_mb": 0.0, "monotonic_windows": 0}
+    n = len(vals)
+    xs = list(range(n))
+    mx, my = sum(xs) / n, sum(vals) / n
+    slope = (sum((x - mx) * (y - my) for x, y in zip(xs, vals)) /
+             (sum((x - mx) ** 2 for x in xs) or 1))
+    growth = vals[-1] - vals[0]
+    mono = 1
+    for i in range(1, n):
+        mono = mono + 1 if vals[i] >= vals[i - 1] else 1
+    mono_run = mono
+    for i in range(1, n):  # longest non-decreasing run
+        run = 1
+        j = i
+        while j < n and vals[j] >= vals[j - 1]:
+            run += 1
+            j += 1
+        mono_run = max(mono_run, run - 1)
+    if growth > leak_threshold_mb and slope > 0 and mono_run >= n - 1:
+        verdict = "LEAK SUSPECTED"
+    elif growth > leak_threshold_mb / 2 and slope > 0:
+        verdict = "GROWTH DETECTED"
+    else:
+        verdict = "NO SIGNIFICANT GROWTH"
+    return {"verdict": verdict, "slope_mb_per_window": round(slope, 2),
+            "growth_mb": round(growth, 2), "monotonic_windows": mono_run,
+            "windows": n}
+
 def _agent(name, width, do_obstacle, ctx, embed_model, dev, cfg, tele_q, stats,
            target_fps, source_keys, duration_s):
     import cv2
     src = PacedSource(cfg, target_fps=target_fps, queue_size=8,
-                      source_keys=source_keys).start()
+                      source_keys=source_keys, loop=True).start()
     stats["source"] = src.tag
     stats["source_kind"] = src.source_kind
     stats["real_pixels"] = src.real_pixels
+    t_agent0 = time.time()
     tr, prev = Tracker(), None
     events, qdepth, ooms = [], [], 0
     t_end = time.time() + duration_s
@@ -105,9 +140,13 @@ def _agent(name, width, do_obstacle, ctx, embed_model, dev, cfg, tele_q, stats,
                                    "tracks": len(live), "obstacle_cells": obst,
                                    "e2e_ms": (t_output - meta["t_capture"]) * 1000})
             except queue.Full:
+                # Dropped here: processed by the agent but never reached fusion,
+                # so it must NOT count as delivered (conservation would break).
                 src.acct.queue_drops += 1
-            src.acct.processed += 1
-            src.acct.delivered += 1
+                src.acct.processed += 1
+            else:
+                src.acct.processed += 1
+                src.acct.delivered += 1
         except RuntimeError as e:
             if "out of memory" in str(e).lower():
                 ooms += 1  # WORKLOAD_OOM: gate veto (distinct from capacity probes)
@@ -123,7 +162,10 @@ def _agent(name, width, do_obstacle, ctx, embed_model, dev, cfg, tele_q, stats,
             src.acct.processing_failures += 1
     src.stop()
     stats.update({"events": events, "qdepth": qdepth, "acct": src.acct.as_dict(),
-                  "oom_events": ooms, "conservation": src.acct.check_conservation()})
+                  "oom_events": ooms, "conservation": src.acct.check_conservation(),
+                  "replay_count": src.replay_count,
+                  "source_duration_s": src.source_duration_s,
+                  "actual_duration_s": round(time.time() - t_agent0, 1)})
 
 def run(cfg):
     dev = resolve_device(cfg.get("device", "auto"))
@@ -239,28 +281,60 @@ def run(cfg):
                 fps_w = [round(len(wins.get(i, [])) / window_s, 2) for i in range(n)]
                 p95_w = [round(float(np.percentile(wins[i], 95)), 2) if wins.get(i) else None
                          for i in range(n)]
+                def _p99(wv):
+                    if not wv:
+                        return None
+                    if len(wv) >= 20:
+                        return round(float(np.percentile(wv, 99)), 2)
+                    return round(max(wv), 2)  # short window: worst sample IS the tail
+                p99_w = [_p99(wins.get(i, [])) for i in range(n)]
+                miss_w, drop_w = [], []
+                for i in range(n):
+                    wv = wins.get(i, [])
+                    miss_w.append(round(100 * sum(1 for v in wv if v > deadline_ms) / len(wv), 2) if wv else None)
+                    gen_i = a["generated"] // n  # paced evenly; producer drops spread uniformly
+                    drop_w.append(round(100 * max(0, gen_i - len(wv)) / gen_i, 2) if gen_i else None)
                 lat_all = [v for w in wins.values() for v in w]
                 d = summarize(lat_all) if lat_all else {"n": 0}
                 d["windows_fps"] = fps_w
                 d["windows_p95_ms"] = p95_w
+                d["windows_p99_ms"] = p99_w
+                d["windows_miss_pct"] = miss_w
+                d["windows_drop_pct"] = drop_w
                 d["initial_fps"] = fps_w[0]
                 steady = _st.median([f for f in fps_w[1:] if f is not None]) if len(fps_w) > 1 else fps_w[0]
                 d["steady_fps"] = round(steady or 0, 2)
                 d["min_fps"] = round(min(f for f in fps_w if f is not None) or 0, 2)
+                d["min_window_fps"] = d["min_fps"]
                 d["final_fps"] = fps_w[-1]
+                d["final_window_fps"] = fps_w[-1]
                 d["degradation_pct"] = round(100 * (fps_w[0] - steady) / fps_w[0], 1) if fps_w[0] else 0
                 p95s = [p for p in p95_w if p is not None]
+                p99s = [p for p in p99_w if p is not None]
                 d["initial_p95_ms"] = p95s[0] if p95s else None
                 d["final_p95_ms"] = p95s[-1] if p95s else None
+                d["final_window_p95_ms"] = d["final_p95_ms"]
                 d["max_p95_ms"] = round(max(p95s), 2) if p95s else None
+                d["max_window_p99_ms"] = round(max(p99s), 2) if p99s else None
+                d["max_window_miss_pct"] = max([m for m in miss_w if m is not None] or [0])
+                d["max_window_drop_pct"] = max([x for x in drop_w if x is not None] or [0])
+                d["final_window_miss_pct"] = miss_w[-1]
                 d["accounting"] = a
+                cons = s.get("conservation")
+                d["conservation_ok"] = cons[0] if isinstance(cons, (list, tuple)) else None
                 d["drop_pct"] = drop_pct(a["generated"], a["delivered"])
                 d["deadline_miss_pct"] = round(
                     100 * sum(1 for v in lat_all if v > deadline_ms) / len(lat_all), 2) if lat_all else 0
                 d["oom_events"] = s["oom_events"]
                 d["oom_kind"] = "WORKLOAD_OOM" if s["oom_events"] else None
                 d["source"] = s["source"]
+                d["source_kind"] = s.get("source_kind")
                 d["real_pixels"] = s["real_pixels"]
+                d["replay_count"] = s.get("replay_count", 0)
+                d["source_duration_s"] = s.get("source_duration_s")
+                d["requested_duration_s"] = duration_s
+                d["actual_duration_s"] = s.get("actual_duration_s")
+                d["duration_complete"] = (s.get("actual_duration_s") or 0) >= duration_s - 1.0
                 per_agent[name] = d
             qw = {}
             for name, _, _, _ in agents:
@@ -292,8 +366,14 @@ def run(cfg):
                             "final": round(last, 2), "per_window": med}
             out["tests"]["resource_evolution"] = evo
             rss = evo.get("proc_rss_mb") or {}
-            out["tests"]["memory_growth"] = _growth(
-                rss.get("initial"), rss.get("final"), cfg.get("leak_threshold_mb", 300))
+            growth = _growth(rss.get("initial"), rss.get("final"),
+                             cfg.get("leak_threshold_mb", 300))
+            growth["trajectory"] = _trajectory((rss.get("per_window") or []),
+                                               cfg.get("leak_threshold_mb", 300))
+            # Trajectory verdict rules: a single first-vs-last delta never
+            # declares a leak on its own.
+            growth["leak_suspected"] = growth["trajectory"]["verdict"] == "LEAK SUSPECTED"
+            out["tests"]["memory_growth"] = growth
             if not all(s.get("real_pixels") for s in stats.values()):
                 out["status"] = S.PARTIAL
                 out["errors"].append("PARTIAL: a stream fell back to synthetic pixels "

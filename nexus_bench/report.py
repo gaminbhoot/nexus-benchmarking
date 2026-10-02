@@ -253,44 +253,114 @@ def _sustained_section(results):
     return table + charts
 
 def _summary_rows(results):
-    """Metric / Result / Limit / Status rows for humans. Limits from gate checks."""
+    """Metric / Result / Limit / Status. Limits read from the gate criteria
+    stored in the report — one source of truth, never a second hardcoded copy."""
     gate = results.get("_gate", {}) or {}
     checks = {c["check"]: c for c in gate.get("checks", [])}
+    crit = gate.get("criteria", {}) or {}
+    sus_crit = crit.get("sustained", {}) or {}
+    wl = crit.get("workloads", {}) or {}
     rows = []
 
     def row(metric, result, limit, ok):
         rows.append((metric, result, limit, "PASS" if ok else "FAIL"))
 
+    def chk(prefix):
+        return checks.get(next((k for k in checks if k.startswith(prefix)), ""), {})
+
     sus = (results.get("sustained", {}) or {}).get("tests", {}) or {}
     per = sus.get("per_agent", {}) or {}
     for agent in ("uav", "rover"):
         a = per.get(agent) or {}
-        c = checks.get(f"sustained.{agent}.steady_fps>=10", {})
-        row(f"{agent.upper()} steady FPS", a.get("steady_fps", "—"),
-            c.get("detail", ">=10 fps"), c.get("pass", False))
-        row(f"{agent.upper()} drops", f"{a.get('drop_pct', '—')}%", "<=5%",
-            (a.get("drop_pct", 100) or 100) <= 5)
+        lim = sus_crit.get("min_fps_each", 10)
+        row(f"{agent.upper()} steady FPS", a.get("steady_fps", "—"), f">={lim}",
+            chk(f"sustained.{agent}.steady_fps").get("pass", False))
+        dlim = sus_crit.get("max_drop_pct", 5)
+        dv = a.get("drop_pct")
+        row(f"{agent.upper()} drops", f"{dv}%" if dv is not None else "—", f"<={dlim}%",
+            chk(f"sustained.{agent}.drop_pct").get("pass", dv is not None and dv <= dlim))
     pipe = ((results.get("pipeline", {}) or {}).get("tests", {}) or {}).get("end_to_end_ms", {}) or {}
     if pipe:
-        row("Pipeline p95", f"{pipe.get('p95_ms', '—')} ms", "<=66.7 ms",
-            (pipe.get("p95_ms", 1e9) or 1e9) <= 66.7)
+        plim = (wl.get("uav", {}) or {}).get("max_p95_ms", 66.7)
+        pv = pipe.get("p95_ms")
+        row("Pipeline p95", f"{pv} ms" if pv is not None else "—", f"<={plim} ms",
+            pv is not None and pv <= plim)
     evo = sus.get("resource_evolution", {}) or {}
     vram = (evo.get("vram_pct") or {}) if isinstance(evo.get("vram_pct"), dict) else {}
     if vram.get("max") is not None:
-        row("Peak VRAM", f"{vram['max']}%", "<=85%", vram["max"] <= 85)
+        vlim = (crit.get("headroom", {}) or {}).get("max_vram_occupied_pct", 85)
+        row("Peak VRAM", f"{vram['max']}%", f"<={vlim}%",
+            chk("resources.vram_headroom").get("pass", vram["max"] <= vlim))
     tmp = (evo.get("gpu_temp_c") or {}) if isinstance(evo.get("gpu_temp_c"), dict) else {}
     if tmp.get("max") is not None:
         row("Max GPU temp", f"{tmp['max']} C", "no throttle evidence",
             ((results.get("thermal", {}) or {}).get("tests", {}) or {}).get("throttling") == "none_detected")
     comp = ((results.get("accuracy", {}) or {}).get("tests", {}) or {}).get("map_comparison", {}) or {}
     if comp.get("map50_drop_abs") is not None:
-        row("Accuracy drop (mAP50)", comp["map50_drop_abs"], "<=0.05",
-            comp["map50_drop_abs"] <= 0.05)
+        alim = (crit.get("accuracy", {}) or {}).get("max_map_drop", 0.05)
+        row("Accuracy drop (mAP50)", comp["map50_drop_abs"], f"<={alim}",
+            chk("accuracy.map50_drop_abs").get("pass", comp["map50_drop_abs"] <= alim))
     ooms = sum((a.get("oom_events") or 0) for a in per.values() if isinstance(a, dict))
     row("Workload OOMs", ooms, "0", ooms == 0)
+    if per:
+        actual = min((a.get("actual_duration_s") or 0) for a in per.values() if isinstance(a, dict))
+        req = (results.get("sustained", {}) or {}).get("config", {}).get("sustained_duration_s", "?")
+        row("Actual sustained duration", f"{actual} s", f">={req} s",
+            isinstance(req, (int, float)) and actual >= req - 1.0)
     return "".join(f"<tr><td>{m}</td><td>{r}</td><td>{l}</td>"
                    f"<td style='font-weight:bold;color:{'green' if s == 'PASS' else 'red'}'>{s}</td></tr>"
                    for m, r, l, s in rows)
+
+def _deployment_block(results):
+    cfgs = {}
+    for m in ("inference", "sustained", "accuracy", "backends"):
+        r = results.get(m)
+        if isinstance(r, dict) and isinstance(r.get("config"), dict):
+            c = r["config"]
+            fp = ((results.get("_provenance") or {}).get("fingerprints") or {}).get("model", "?")
+            eff = c.get("effective_precision") or (
+                c.get("precision", {}).get("requested") if isinstance(c.get("precision"), dict)
+                else c.get("precision"))
+            cfgs[m] = (f"model={str(fp)[:16]}… backend={c.get('resolved_device', '?')} "
+                       f"precision={eff} resolution={c.get('imgsz', '?')} "
+                       f"batch={c.get('batch', '?')}")
+    rows = "".join(f"<tr><td>{m}</td><td>{v}</td></tr>" for m, v in cfgs.items())
+    notes = ("<p>Accuracy, inference, sustained, and gate results must all refer to ONE "
+             "deployment identity above. A mismatch fails the gate.</p>" if len(set(cfgs.values())) > 1
+             else "<p>Single deployment identity across modules.</p>")
+    return f"<table><tr><th>Module</th><th>Deployment identity</th></tr>{rows}</table>{notes}"
+
+def _assets_block(results):
+    recs = results.get("_assets", {}) or {}
+    manifest = recs.get("manifest", [])
+    if not manifest:
+        return "<p>Official asset verification was not run for this report.</p>"
+    rows = "".join(f"<tr><td>{r.get('asset_id')}</td><td>{r.get('status')}</td>"
+                   f"<td>{r.get('expected_sha256', '')[:16]}…</td></tr>" for r in manifest)
+    bad = [r for r in manifest if r.get("status") != "OK"]
+    flag = ("<p><b>QUALIFICATION INVALID — official assets were modified or corrupted. "
+            "No gate verdict in this report may be used.</b></p>" if bad else
+            f"<p>Qualification v{recs.get('qualification_version', '?')}: all official "
+            "assets verified.</p>")
+    return flag + f"<table><tr><th>Asset</th><th>Status</th><th>SHA-256</th></tr>{rows}</table>"
+
+def _provenance_block(results, prov):
+    rel = prov.get("release")
+    if rel:
+        return (f"<p>Release package: NEXUS Qualification v{rel.get('qualification_version', '?')} "
+                f"({rel.get('release_id', '?')}). Source identity: release manifest "
+                f"{str(rel.get('source_tree_sha256', ''))[:16]}…. "
+                f"Git: not applicable in packaged distribution.</p>"
+                f"<pre>{json.dumps(prov, indent=2, default=str)[:2000]}</pre>")
+    return f"<pre>{json.dumps(prov, indent=2, default=str)[:4000]}</pre>"
+
+def _limitations_block(results):
+    items = ["Depth-estimation network: NOT TESTED (occupancy-grid proxy in rover agent)",
+             "Mission planner: representative allocation proxy only",
+             "Physical wireless link: NOT TESTED (loopback stack cost only)"]
+    sus = ((results.get("sustained", {}) or {}).get("config") or {}).get("limitations", [])
+    items.extend(x for x in sus if x not in items)
+    return "<ul>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>"
 
 def plain_summary(results):
     """Plain-text summary a seller can send by email/WhatsApp. No jargon."""
@@ -358,7 +428,6 @@ def _html(results, rows, stamp):
     prof = results.get("_profile", {})
     gate_verdict = gate.get("verdict", "not-evaluated")
     states = json.dumps(gate.get("states", {}), default=str)
-    prov_json = json.dumps(prov, indent=2, default=str)[:4000]
     color = {"PASS": "green", "PASS_WITH_HEADROOM": "green", "FAIL": "red"}.get(gate_verdict, "#b26a00")
     why_bullets = "".join(f"<li><b>{c['check']}</b>: {c['detail']}</li>"
                           for c in gate.get("checks", []) if not c["pass"]) or \
@@ -385,7 +454,17 @@ def _html(results, rows, stamp):
     machine = f"{(prof.get('cpu') or {}).get('brand', '?')} / " \
               f"{(prof.get('gpu') or {}).get('name', (prof.get('gpu') or {}).get('note', '?'))} / " \
               f"{(prof.get('memory') or {}).get('ram_total_gb', '?')} GB RAM"
+    rel = prov.get("release") or {}
+    import hashlib as _hl
+    gate_fp = _hl.sha256(json.dumps(gate.get("checks", []), sort_keys=True, default=str).encode()).hexdigest()[:12]
+    stamps = (f"NEXUS Qualification v{rel.get('qualification_version', '?')} · "
+              f"benchmark {prov.get('benchmark_version', '?')} · gate-evidence {gate_fp}")
     dur = (results.get("sustained", {}) or {}).get("config", {}).get("sustained_duration_s", "—")
+    # deployment identity: the exact qualified configuration, one block.
+    dep = _deployment_block(results)
+    assets_html = _assets_block(results)
+    prov_block = _provenance_block(results, prov)
+    limitations = _limitations_block(results)
     return f"""<html><head><title>NEXUS Hardware Qualification {stamp}</title>
 <style>body{{font-family:sans-serif;max-width:1100px;margin:auto;padding:20px}}
 table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding:4px 8px;font-size:13px}}
@@ -393,20 +472,23 @@ table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding
 .hero h1{{font-size:44px;margin:8px;color:{color}}}</style>
 </head><body>
 <div class="hero"><div>NEXUS HARDWARE QUALIFICATION</div>
-<div style="font-size:14px">{machine} · sustained {dur}s · target {results['_meta']['req_fps']} FPS</div>
+<div style="font-size:14px">{machine} · sustained {dur}s · target {results['_meta']['req_fps']} FPS<br/>{stamps}</div>
 <h1>{gate_verdict}</h1></div>
 {hw_banner}{dirty_banner}
 <h2>Why?</h2><ul>{why_bullets}</ul>
 <h2>Summary</h2>
 <table><tr><th>Metric</th><th>Result</th><th>Limit</th><th>Status</th></tr>{_summary_rows(results)}</table>
 <h2>Sustained qualification</h2>{_sustained_section(results)}
+<h2>Deployment identity</h2>{dep}
+<h2>Official assets</h2>{assets_html}
+<h2>LIMITATIONS — what this report does NOT certify</h2>{limitations}
 <h2>Purchase gate checks</h2>
 <table><tr><th>Check</th><th>Result</th><th>Detail</th></tr>{gate_rows}</table>
 <p>Only FULL-status measurements count. States: {states}. NOT TESTED / non-FULL: {', '.join(not_tested) or 'none'}</p>
 <h2>Power (measured vs unavailable — never invented)</h2>
 <table><tr><th>Signal</th><th>Value</th><th>How</th></tr>{power_rows or '<tr><td colspan=3>no power section</td></tr>'}</table>
 <p>{(power.get('coverage') or {}).get('note', '')}</p>
-<h2>Provenance</h2><pre>{prov_json}</pre>
+<h2>Provenance</h2>{prov_block}
 <h2>Platform</h2><pre>{json.dumps(prof, indent=2, default=str)[:3000]}</pre>
 <h2>Feasibility (required: {results['_meta']['req_fps']} FPS; p95 + misses decide)</h2>
 <table><tr><th>Module</th><th>Verdict</th><th>Meaning</th><th>Why</th></tr>{feas_rows}</table>

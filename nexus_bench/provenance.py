@@ -65,13 +65,31 @@ def manifest(cfg):
 
     mp = (cfg.get("model") or "").strip()
     git = _git()
+    try:
+        from nexus_bench import release as R
+        rel = R.read_release()
+    except Exception:
+        rel = None
+    if rel:
+        # Packaged distribution: release identity replaces git; a missing .git
+        # is normal here and must never penalize a legitimate release.
+        distribution = f"release {rel.get('qualification_version', '?')} " \
+                       f"({rel.get('release_id', 'unidentified')})"
+        source_state = "packaged release"
+        git = {"sha": "n/a (packaged distribution)", "dirty": False,
+               "root": "n/a (packaged distribution)"}
+    else:
+        distribution = "dev-git"
+        source_state = ("UNRELEASED / DIRTY SOURCE — results not reproducible from "
+                        "commit alone" if git.get("dirty") else "clean tree")
     return {
         "benchmark": "nexus-benchmarking",
         "benchmark_version": __import__("nexus_bench").__version__
         if hasattr(__import__("nexus_bench"), "__version__") else "unknown",
         "git": git,
-        "source_state": ("UNRELEASED / DIRTY SOURCE — results not reproducible from "
-                         "commit alone" if git.get("dirty") else "clean tree"),
+        "distribution": distribution,
+        "release": rel,
+        "source_state": source_state,
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "python": platform.python_version(),
         "platform": f"{platform.system()} {platform.release()} ({platform.machine()})",

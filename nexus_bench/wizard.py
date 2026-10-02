@@ -146,7 +146,7 @@ def run_wizard():
                                                progress=progress)
     finally:
         stop_ticker.set()
-    print("\n[12/12] Qualification complete.")
+    print(f"\n[{len(mods)}/{len(mods)}] Qualification complete.")
     _explain_failures(results)
     folder, zipp = package_results(paths, results)
     print(f"\nREPORT READY\nFolder:      {folder}\nHTML report: {paths['html']}\nZIP package: {zipp}")
@@ -171,10 +171,10 @@ def _explain_failures(results):
               f"{v.get('status')} and it does not count toward qualification.")
     print("WHAT WAS STILL COLLECTED: all completed steps are in the report and ZIP.")
 
-def package_results(paths, results):
+def package_results(paths, results, parent="."):
     import datetime
     stamp = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    folder = f"NEXUS_Qualification_{stamp}"
+    folder = os.path.join(parent, f"NEXUS_Qualification_{stamp}")
     os.makedirs(folder, exist_ok=True)
     from nexus_bench import report as report_mod
     mapping = {"html": "NEXUS_Qualification_Report.html", "json": "results.json",
@@ -185,6 +185,16 @@ def package_results(paths, results):
     with open(os.path.join(folder, "provenance.json"), "w") as f:
         import json
         json.dump(results.get("_provenance", {}), f, indent=2, default=str)
+    for key, name in (("_assets", "asset_manifest.json"),):
+        if results.get(key) is not None:
+            with open(os.path.join(folder, name), "w") as f:
+                json.dump(results[key], f, indent=2, default=str)
+    qman = {"generated_utc": stamp,
+            "qualification_version": results.get("_assets", {}).get("qualification_version", "?"),
+            "modules": sorted(k for k in results if not k.startswith("_") and isinstance(results[k], dict)),
+            "verdict": (results.get("_gate") or {}).get("verdict", "?")}
+    with open(os.path.join(folder, "qualification_manifest.json"), "w") as f:
+        json.dump(qman, f, indent=2, default=str)
     with open(os.path.join(folder, "qualification_summary.txt"), "w") as f:
         f.write(report_mod.plain_summary(results))
     zipp = folder + ".zip"

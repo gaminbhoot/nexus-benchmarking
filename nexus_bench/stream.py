@@ -65,9 +65,12 @@ def drop_pct(generated, delivered):
     return round(100.0 * (generated - delivered) / generated, 2)
 
 class PacedSource:
-    def __init__(self, cfg, target_fps=30.0, queue_size=8, source_keys=("video",)):
+    def __init__(self, cfg, target_fps=30.0, queue_size=8, source_keys=("video",),
+                 loop=False):
         """source_keys: ordered fallback chain, e.g. ("uav_video", "video").
-        First existing source wins; the choice is recorded, never silent."""
+        First existing source wins; the choice is recorded, never silent.
+        loop=True: short clips rewind at EOF until the consumer stops, so a
+        20 s clip covers a 600 s run. replay_count + source_duration_s prove it."""
         self.cfg = cfg
         self.target_fps = target_fps or 30.0
         self.q = queue.Queue(maxsize=queue_size)
@@ -77,6 +80,9 @@ class PacedSource:
         self.source_used = None   # which key won, e.g. "uav_video"
         self.source_kind = "synthetic"
         self.source_detail = ""
+        self.loop = loop
+        self.replay_count = 0
+        self.source_duration_s = None  # measured span of one pass (video only)
         self._stop = threading.Event()
         self._thread = None
         self._exhausted = threading.Event()
@@ -114,27 +120,47 @@ class PacedSource:
     def _frames(self):
         import cv2
         if self.source_kind == "video":
-            cap = cv2.VideoCapture(self.source_detail)
-            try:
-                while not self._stop.is_set():
-                    ok, f = cap.read()
-                    if not ok:
-                        break
-                    yield cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
-            finally:
-                cap.release()
+            while True:
+                cap = cv2.VideoCapture(self.source_detail)
+                try:
+                    n_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+                    fps = cap.get(cv2.CAP_PROP_FPS) or 0
+                    if n_frames and fps:
+                        self.source_duration_s = round(n_frames / fps, 2)
+                    while not self._stop.is_set():
+                        ok, f = cap.read()
+                        if not ok:
+                            break
+                        yield cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
+                finally:
+                    cap.release()
+                if not self.loop or self._stop.is_set():
+                    return
+                self.replay_count += 1  # rewind: short clip, long qualification
             return
         if self.source_kind == "image_dir":
-            for f in sorted(os.listdir(self.source_detail.split(" (")[0])):
-                if self._stop.is_set():
-                    break
-                if not f.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")):
-                    continue
-                img = cv2.imread(os.path.join(self.source_detail.split(" (")[0], f))
-                if img is not None:
-                    yield cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            base = self.source_detail.split(" (")[0]
+            while True:
+                files = sorted(f for f in os.listdir(base)
+                               if f.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")))
+                for f in files:
+                    if self._stop.is_set():
+                        break
+                    img = cv2.imread(os.path.join(base, f))
+                    if img is not None:
+                        yield cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                if not self.loop or self._stop.is_set():
+                    return
+                self.replay_count += 1
             return
         from nexus_bench.vision_bench import _moving_squares
+        if self.loop:
+            seed = self.cfg.get("seed", 0)
+            while not self._stop.is_set():
+                yield from _moving_squares(300, seed=seed)
+                self.replay_count += 1
+                seed += 1
+            return
         yield from _moving_squares(self.cfg.get("agent_frames", 600),
                                    seed=self.cfg.get("seed", 0))
 

@@ -30,7 +30,8 @@ gate:
     uav: {module: pipeline, min_fps: 15, max_p95_ms: 66.7, max_p99_ms: 120.0, max_miss_pct: 5.0, max_drop_pct: 5.0}
     rover: {module: pipeline, min_fps: 15, max_p95_ms: 66.7, max_p99_ms: 120.0, max_miss_pct: 5.0, max_drop_pct: 5.0}
     dual: {module: integrated, min_fps_each: 10.0, max_drop: 0, min_ticks: 10}
-  sustained: {min_fps_each: 10.0, max_drop_pct: 5.0, max_degradation_pct: 15.0, min_duration_s: 600}
+  sustained: {min_fps_each: 10.0, max_drop_pct: 5.0, max_degradation_pct: 15.0, min_duration_s: 600, max_p95_ms: 66.7, max_p99_ms: 120.0, max_miss_pct: 5.0, max_temp_c: 90}
+  power: {require_ac: true}
   headroom: {min_fps_margin: 1.2, max_vram_occupied_pct: 85.0, max_miss_pct: 2.0}
   resources: {forbid_throttle_likely: true, forbid_oom: true}
   accuracy: {max_map_drop: 0.05}

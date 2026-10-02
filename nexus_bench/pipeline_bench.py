@@ -53,7 +53,8 @@ def run(cfg):
             model, etag = load_embedder(dev, (cfg.get("reid_model") or "").strip())
             out["config"]["embedder"] = etag
             src = PacedSource(cfg, target_fps=target_fps,
-                              source_keys=tuple(cfg.get("source_keys") or ("video",))).start()
+                              source_keys=tuple(cfg.get("source_keys") or ("video",)),
+                              loop=True).start()
             out["config"]["source"] = src.tag
             out["config"]["source_kind"] = src.source_kind
             tr = Tracker()
@@ -142,6 +143,8 @@ def run(cfg):
             d["acquire_mean_ms"] = round(_st.fmean(src.acquire_ms), 3) if src.acquire_ms else None
             d["queue_wait_mean_ms"] = round(_st.fmean(wait_ms), 3) if wait_ms else None
             d["processing_mean_ms"] = round(_st.fmean(proc_ms), 3) if proc_ms else None
+            d["replay_count"] = src.replay_count
+            d["source_duration_s"] = src.source_duration_s
             out["tests"]["end_to_end_ms"] = d
         except Exception as e:
             out["status"] = S.FAILED

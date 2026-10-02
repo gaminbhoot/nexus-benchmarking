@@ -7,3 +7,4 @@ reports/
 *.onnx
 .DS_Store
 *.egg-info/
+release/

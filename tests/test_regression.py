@@ -21,16 +21,37 @@ def _passing_base():
             "fusion": {"ticks": 50}}),
         "memory": full("memory", {"vram_total_mb": 4000.0, "vram_peak_reserved_mb": 2800.0}),
         "thermal": full("thermal", {"throttling": "none_detected"}),
-        "accuracy": full("accuracy", {"map_comparison": {
+        "accuracy": dict(full("accuracy", {"map_comparison": {
             "candidate": "fp16", "map50_drop_abs": 0.01, "map50_drop_rel": 0.02}}),
+            config={"model": "m.pt", "precision": "fp32", "resolved_device": "cuda",
+                    "imgsz": 640, "batch": 1}),
         "sustained": dict(full("sustained", {
             "per_agent": {
-                "uav": {"steady_fps": 12.0, "final_fps": 12.0, "drop_pct": 1.0,
-                        "degradation_pct": 5.0, "oom_events": 0},
-                "rover": {"steady_fps": 12.0, "final_fps": 12.0, "drop_pct": 1.0,
-                          "degradation_pct": 5.0, "oom_events": 0}},
-            "memory_growth": {"growth": 10.0, "leak_suspected": False}}),
-            config={"duration_s": 600}),
+                "uav": {"steady_fps": 16.0, "final_fps": 16.0, "drop_pct": 1.0,
+                        "degradation_pct": 5.0, "oom_events": 0, "min_window_fps": 12.0,
+                        "final_window_fps": 12.0, "max_p95_ms": 55.0,
+                        "max_window_p99_ms": 90.0, "max_window_miss_pct": 2.0,
+                        "max_window_drop_pct": 1.0, "conservation_ok": True,
+                        "actual_duration_s": 600, "requested_duration_s": 600,
+                        "duration_complete": True},
+                "rover": {"steady_fps": 16.0, "final_fps": 16.0, "drop_pct": 1.0,
+                          "degradation_pct": 5.0, "oom_events": 0, "min_window_fps": 12.0,
+                          "final_window_fps": 12.0, "max_p95_ms": 55.0,
+                          "max_window_p99_ms": 90.0, "max_window_miss_pct": 2.0,
+                          "max_window_drop_pct": 1.0, "conservation_ok": True,
+                          "actual_duration_s": 600, "requested_duration_s": 600,
+                          "duration_complete": True}},
+            "memory_growth": {"growth": 10.0, "leak_suspected": False},
+            "resource_evolution": {
+                "vram_pct": {"initial": 60.0, "max": 70.0, "final": 65.0},
+                "gpu_temp_c": {"initial": 60.0, "max": 75.0, "final": 70.0,
+                               "per_window": [60.0, 70.0, 75.0]}}}),
+            config={"duration_s": 600, "model": "m.pt", "precision": "fp32",
+                    "resolved_device": "cuda", "imgsz": 640, "batch": 1}),
+        "_power": {"signals": {"ac_connected": {"value": True, "how": "measured"}}},
+        "_power": {"signals": {"ac_connected": {"value": True, "how": "measured"}}},
+        "_provenance": {"git": {"sha": "abc", "dirty": False},
+                        "fingerprints": {"model": "abc123"}},
     }
 
 
@@ -283,7 +304,7 @@ def test_report_and_summary_generate(tmp_path):
                    _provenance={"git": {"sha": "abc", "dirty": False}},
                    _power={"signals": {"ac_connected": {"value": True, "how": "measured"}},
                            "coverage": {"note": "partial"}})
-    results["_gate"] = G.evaluate({k: v for k, v in results.items() if not k.startswith("_")})
+    results["_gate"] = G.evaluate({k: v for k, v in results.items() if "__run" not in k})
     paths = R.write_all(results, tmp_path, req_fps=15)
     import pathlib
     assert pathlib.Path(paths["html"]).exists() and pathlib.Path(paths["json"]).exists()

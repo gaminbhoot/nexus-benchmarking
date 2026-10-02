@@ -7,6 +7,7 @@ import time
 import torch
 import torch.nn as nn
 
+from nexus_bench import statuses as S
 from nexus_bench.monitor import Monitor
 from nexus_bench.profiles import resolve_device
 from nexus_bench.stats import summarize
@@ -60,7 +61,7 @@ def run(cfg):
     dev = resolve_device(cfg.get("device", "auto"))
     w, r = cfg.get("warmup", 3), cfg.get("repeats", 20)
     out = {"module": "gpu", "config": {**cfg, "resolved_device": dev},
-           "tests": {}, "errors": []}
+           "tests": {}, "errors": [], "status": S.FULL}
     if dev == "cpu":
         out["errors"].append("no GPU accelerator (cuda/mps unavailable); CPU reference only")
     try:
