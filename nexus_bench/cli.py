@@ -131,6 +131,9 @@ def main():
     if mods == ["wizard"]:
         from nexus_bench.wizard import run_wizard
         return run_wizard()
+    if mods == ["doctor"]:
+        from nexus_bench.doctor import main as doctor_main
+        return doctor_main()
     if mods == ["qualify"] or mods == ["qualify-extended"]:
         from nexus_bench.qualify import run_qualify, VERDICT_EXIT
         _folder, _zipp, _results = run_qualify(

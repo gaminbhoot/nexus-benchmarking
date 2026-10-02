@@ -405,6 +405,8 @@ def test_all_text_opens_declare_encoding():
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             if "open(" not in line or "Popen" in line or "os.path.abspath" in line:
                 continue
+            if "urlopen(" in line:
+                continue  # network stream, not a locale-decoded file
             if re.search(r'"rb"|"wb"|\'rb\'', line):
                 continue
             if "encoding=" not in line:
@@ -427,6 +429,19 @@ def test_pyproject_matches_requirements_lock():
         if name.lower() in lock:
             assert op == "==" and ver == lock[name.lower()], \
                 f"{name}: pyproject {op}{ver} != lock {lock[name.lower()]}"
+
+
+# --- doctor: fast, structured, no tracebacks ---
+def test_doctor_runs_structured():
+    from nexus_bench import doctor as D
+    checks = D.run_doctor()
+    assert isinstance(checks, list) and checks
+    for c in checks:
+        assert {"check", "ok", "detail", "fix"} <= set(c)
+    names = [c["check"] for c in checks]
+    for required in ("python_version", "python_arch", "venv_module", "pip",
+                     "disk", "internet_pypi", "release_files", "official_assets"):
+        assert required in names
 
 
 def test_report_and_summary_generate(tmp_path):
