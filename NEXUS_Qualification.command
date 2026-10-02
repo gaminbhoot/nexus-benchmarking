@@ -1,6 +1,6 @@
 #!/bin/bash
 # NEXUS Hardware Qualification — seller entry point (macOS, double-clickable).
-# No choices, no files, no commands: runs the official qualification.
+# One-time setup uses the PINNED runtime (requirements.lock); afterwards fully offline.
 set -euo pipefail
 cd "$(dirname "$0")"
 LOG="$HOME/Desktop/NEXUS_Qualification.log"
@@ -12,9 +12,10 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 if [ ! -x ".venv/bin/python" ]; then
-  echo "Preparing qualification runtime (one-time setup)..."
+  echo "Preparing qualification runtime (one-time setup, pinned versions)..."
   python3 -m venv .venv
+  ./.venv/bin/python -m pip install -q -r requirements.lock
+  ./.venv/bin/python -m pip install -q --no-deps -e .
 fi
-./.venv/bin/python -m pip install -q -e .
 ./.venv/bin/python -m nexus_bench.cli qualify
 echo "Log saved to $LOG"

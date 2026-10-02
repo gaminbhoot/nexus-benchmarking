@@ -155,7 +155,10 @@ def run_qualify(root=None, extended=False, assume_yes=False, out_parent=".",
     say("\nOfficial test package:")
     try:
         paths, records = A.ensure_all(root, progress=lambda *a: None)
-        A.ensure_accuracy_tree(root)
+        tree = A.ensure_accuracy_tree(root)
+        records = list(records) + [{"asset_id": "nexus-qual-coco8-v1-tree",
+                                    "path": tree, "status": "OK",
+                                    "detail": "extracted tree hash verified"}]
         for r in records:
             nm = r["asset_id"].rsplit("-", 1)[0].split("nexus-qual-")[-1]
             say(f"  {nm:.<22} VERIFIED")

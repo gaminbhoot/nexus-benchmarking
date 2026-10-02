@@ -48,3 +48,30 @@ jobs:
       - name: Release artifact checksum
         run: |
           ls -l dist/ && cat dist/*.sha256
+
+  one-binary-exe:
+    # EXPERIMENTAL: per-OS PyInstaller bundles of the seller appliance.
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    needs: release-integrity
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime + pyinstaller
+        run: |
+          python -m pip install -r requirements.lock
+          python -m pip install --no-deps -e .
+          python -m pip install pyinstaller
+      - name: Build NEXUS_Qualification bundle
+        run: |
+          pyinstaller nexus_qualify.spec --noconfirm
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXUS_Qualification-${{ matrix.os }}
+          path: dist/NEXUS_Qualification/

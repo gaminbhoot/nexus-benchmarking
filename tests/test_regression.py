@@ -46,10 +46,10 @@ def _passing_base():
             "resource_evolution": {
                 "vram_pct": {"initial": 60.0, "max": 70.0, "final": 65.0},
                 "gpu_temp_c": {"initial": 60.0, "max": 75.0, "final": 70.0,
-                               "per_window": [60.0, 70.0, 75.0]}}}),
+                               "per_window": [60.0, 70.0, 75.0]},
+                "gpu_clock_mhz": {"per_window": [1500.0, 1500.0, 1495.0, 1495.0]}}}),
             config={"duration_s": 600, "model": "m.pt", "precision": "fp32",
                     "resolved_device": "cuda", "imgsz": 640, "batch": 1}),
-        "_power": {"signals": {"ac_connected": {"value": True, "how": "measured"}}},
         "_power": {"signals": {"ac_connected": {"value": True, "how": "measured"}}},
         "_provenance": {"git": {"sha": "abc", "dirty": False},
                         "fingerprints": {"model": "abc123"}},
@@ -67,17 +67,36 @@ def test_garbage_result_never_passes():
 
 # --- thermal fail-closed ---
 def test_thermal_unknown_is_inconclusive_not_pass():
+    import copy
+    r = _passing_base()
+    r["thermal"] = {"module": "thermal", "status": S.FULL,
+                    "tests": {"throttling": "unknown"}, "errors": []}
+    # remove sustained thermal telemetry too: nothing certifiable anywhere
+    r2 = copy.deepcopy(r)
+    del r2["sustained"]["tests"]["resource_evolution"]["gpu_temp_c"]
+    del r2["sustained"]["tests"]["resource_evolution"]["gpu_clock_mhz"]
+    g = G.evaluate(r2)
+    assert g["verdict"] == S.INCONCLUSIVE
+
+
+def test_thermal_slowdown_unknown_is_inconclusive():
+    import copy
+    r = _passing_base()
+    r["thermal"]["tests"] = {"throttling": "slowdown_cause_unknown"}
+    r2 = copy.deepcopy(r)
+    del r2["sustained"]["tests"]["resource_evolution"]["gpu_temp_c"]
+    del r2["sustained"]["tests"]["resource_evolution"]["gpu_clock_mhz"]
+    assert G.evaluate(r2)["verdict"] == S.INCONCLUSIVE
+
+
+def test_sustained_thermal_overrides_unknown_short():
+    # Sustained 10-minute telemetry with no throttle signs authoritatively
+    # clears an unknown short probe (fixture evo: cool + flat clocks).
     r = _passing_base()
     r["thermal"] = {"module": "thermal", "status": S.FULL,
                     "tests": {"throttling": "unknown"}, "errors": []}
     g = G.evaluate(r)
-    assert g["verdict"] == S.INCONCLUSIVE, g["checks"]
-
-
-def test_thermal_slowdown_unknown_is_inconclusive():
-    r = _passing_base()
-    r["thermal"]["tests"] = {"throttling": "slowdown_cause_unknown"}
-    assert G.evaluate(r)["verdict"] == S.INCONCLUSIVE
+    assert g["verdict"] in (S.PASS, S.PASS_WITH_HEADROOM)
 
 
 # --- OOM kinds ---
@@ -333,7 +352,7 @@ def test_release_tamper_detected(tmp_path):
         "benchmark_source_sha256": "0" * 64, "gate_sha256": "1" * 64,
         "asset_manifest_sha256": "2" * 64}))
     ok, problems = R.verify_runtime(str(tmp_path))
-    assert not ok and len(problems) == 3
+    assert not ok and len(problems) >= 3
 
 
 # --- qualify exit codes are authoritative ---
@@ -361,9 +380,26 @@ def test_report_rows_four_states(tmp_path):
     html = pathlib.Path(paths["html"]).read_text()
     assert "INCONCLUSIVE" in html  # missing metric must not render red FAIL
     assert "Accuracy drop" in html
+# --- nested sustained metrics steer worst-run selection ---
+def test_runs_aggregate_nested_sustained():
+    def sus_run(fps):
+        return {"module": "sustained", "status": S.FULL,
+                "tests": {"per_agent": {
+                    "uav": {"steady_fps": fps, "min_window_fps": fps},
+                    "rover": {"steady_fps": fps, "min_window_fps": fps}}},
+                "errors": []}
+    res = {"sustained__run1": sus_run(18.0), "sustained__run2": sus_run(9.0)}
+    out = G.aggregate_runs(res)
+    agg = out["sustained"]
+    assert agg["tests"]["per_agent"]["uav"]["steady_fps"] == 9.0  # nested worst kept
+    assert agg["tests"]["per_agent"]["uav"]["min_window_fps"] == 9.0
+
 def test_report_and_summary_generate(tmp_path):
     from nexus_bench import report as R
     r = _passing_base()
+    for a in ("uav", "rover"):
+        for k in ("steady_fps", "final_fps", "min_window_fps", "final_window_fps"):
+            r["sustained"]["tests"]["per_agent"][a][k] = 20.0
     results = dict(r, _profile={"cpu": {"brand": "X"}, "gpu": {"name": "RTX 3050 Laptop GPU"},
                                 "memory": {"ram_total_gb": 16}},
                    _config={"req_fps": 15, "duration_s": 600, "seed": 0},

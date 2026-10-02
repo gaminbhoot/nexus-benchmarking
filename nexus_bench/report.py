@@ -476,8 +476,19 @@ def _html(results, rows, stamp):
     rel = prov.get("release") or {}
     import hashlib as _hl
     gate_fp = _hl.sha256(json.dumps(gate.get("checks", []), sort_keys=True, default=str).encode()).hexdigest()[:12]
-    stamps = (f"NEXUS Qualification v{rel.get('qualification_version', '?')} · "
-              f"benchmark {prov.get('benchmark_version', '?')} · gate-evidence {gate_fp}")
+    soft_v = prov.get("benchmark_version", "?")
+    qual_v = rel.get("qualification_version", "?") if rel else "dev (unreleased)"
+    gate_v = rel.get("gate_version", "?") if rel else "dev (unreleased)"
+    assets_v = None
+    try:
+        from nexus_bench import assets as _A
+        assets_v = _A.OFFICIAL_MANIFEST.get("manifest_version", "?")
+    except Exception:
+        pass
+    stamps = (f"Software release: {soft_v} · Qualification procedure: {qual_v} · "
+              f"Gate: {gate_v} · Asset set: {assets_v} · gate-evidence {gate_fp}<br/>"
+              f"Qualification v{qual_v} here means the procedure version — "
+              f"not the software release.")
     dur = (results.get("sustained", {}) or {}).get("config", {}).get("sustained_duration_s", "—")
     # deployment identity: the exact qualified configuration, one block.
     dep = _deployment_block(results)

@@ -1,0 +1,18 @@
+# NEXUS Qualification pinned runtime — verified 2026-10-02 in the reference venv.
+# Same file installs on Windows/Linux/macOS (all pins have wheels on PyPI).
+# torch from PyPI bundles CUDA on Linux/Windows; MPS is used on macOS.
+# Do NOT relax these without bumping the qualification version + re-validating.
+matplotlib==3.11.2
+numpy==2.5.3
+opencv-python==5.0.0.93
+packaging==26.3
+pandas==3.0.6
+pillow==12.3.0
+psutil==7.2.2
+PyYAML==6.0.3
+requests==2.34.2
+torch==2.14.1
+torchvision==0.29.1
+ultralytics==8.4.171
+ultralytics-platform==0.1.75
+ultralytics-thop==2.2.2

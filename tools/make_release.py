@@ -28,6 +28,7 @@ def main():
         "asset_manifest_version": manifest["manifest_version"],
         "asset_manifest_sha256": msha,
         "gate_sha256": R.gate_sha(root),
+        "requirements_sha256": R.requirements_sha(root),
         "benchmark_source_sha256": R.source_tree_sha(root),
         "built_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }

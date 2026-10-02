@@ -44,6 +44,12 @@ def gate_sha(root=None):
             h.update(f.read())
     return h.hexdigest()
 
+def requirements_sha(root=None):
+    h = hashlib.sha256()
+    with open(os.path.join(root or package_root(), "requirements.lock"), "rb") as f:
+        h.update(f.read())
+    return h.hexdigest()
+
 def verify_runtime(root=None):
     """Verify the packaged release BEFORE any qualification runs.
 
@@ -63,6 +69,12 @@ def verify_runtime(root=None):
     if gate_sha(root) != rel.get("gate_sha256"):
         problems.append("gate/profile files differ from release manifest "
                         "(official qualification profile was modified)")
+    try:
+        if requirements_sha(root) != rel.get("requirements_sha256"):
+            problems.append("requirements.lock differs from release manifest "
+                            "(pinned runtime was modified)")
+    except Exception:
+        problems.append("requirements.lock missing — pinned runtime unverifiable")
     msha = hashlib.sha256(json.dumps(
         __import__("nexus_bench.assets", fromlist=["x"]).OFFICIAL_MANIFEST,
         sort_keys=True).encode()).hexdigest()

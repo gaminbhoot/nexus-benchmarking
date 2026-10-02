@@ -45,7 +45,8 @@ def _sustained_ok(fps=16.0):
                       "resource_evolution": {
                           "vram_pct": {"initial": 60.0, "max": 70.0, "final": 65.0},
                           "gpu_temp_c": {"initial": 60.0, "max": 75.0, "final": 70.0,
-                                         "per_window": [60.0, 70.0, 75.0]}}},
+                                         "per_window": [60.0, 70.0, 75.0]},
+                          "gpu_clock_mhz": {"per_window": [1500.0, 1500.0, 1495.0, 1495.0]}}},
             "errors": []}
 
 def _env():
@@ -60,8 +61,18 @@ def _base():
     return d
 
 def test_gate_pass_with_headroom():
-    g = G.evaluate(_base())
+    import copy
+    r = _base()
+    for a in ("uav", "rover"):
+        for k in ("steady_fps", "final_fps", "min_window_fps", "final_window_fps"):
+            r["sustained"]["tests"]["per_agent"][a][k] = 20.0
+    r["pipeline"]["tests"]["end_to_end_ms"]["throughput_fps"] = 24.0
+    g = G.evaluate(r)
     assert g["verdict"] == S.PASS_WITH_HEADROOM, g["checks"]
+
+def test_gate_pass_without_headroom():
+    g = G.evaluate(_base())
+    assert g["verdict"] == S.PASS, g["checks"]
 
 def test_gate_partial_evidence_is_not_pass():
     r = _base()

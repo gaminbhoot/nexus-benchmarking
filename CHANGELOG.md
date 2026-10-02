@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.7.0 — reproducible immutable product
+
+- Pinned runtime (`requirements.lock`, verified exact versions): seller
+  launchers install pins, never `>=` ranges; release records + verifies the
+  requirements hash; provenance reports the four versions separately (software /
+  qualification procedure / gate / asset set).
+- Official model bundled in the repo + release ZIP (Mode A complete);
+  bootstrap is recovery-only. Release builder bootstraps before verifying.
+- True per-window drops from generation/delivery timestamps (uniform-spread
+  assumption deleted); sustained thermal classifier (temp + clock decline +
+  degradation) independently authoritative; headroom computed from sustained
+  evidence; schema-aware worst-run aggregation incl. nested sustained metrics.
+- Missing-evidence audit across every gate check (`_check_num`); fusion
+  contract; duration/conservation proof; AC policy; hardware mismatch;
+  deployment identity with engine/provider/runtime.
+- Report rows carry PASS/FAIL/INCONCLUSIVE/NOT TESTED; limits from gate
+  criteria; deployment identity, asset verification, LIMITATIONS, version
+  stamps, duration proof, sustained charts, seller summary, packaged ZIP.
+- `qualify` exit codes authoritative (0/2/3/4); preflight gate; pre/post
+  sanity + recovery; release identity without Git (`NEXUS_DEV=1` for devs).
+- PyInstaller spec + CI per-OS one-binary job (experimental); CI enforces
+  pytest × 3 OS + release integrity. 99 tests green.
+
 ## 0.6.0 — immutable seller appliance
 
 - Release system: `tools/build_release.py` assembles versioned self-contained

@@ -214,15 +214,18 @@ def evaluate(results, gate=None):
                kind="missing")
         overall = False
     th = ((results.get("thermal", {}) or {}).get("tests") or {}).get("throttling")
-    if th == "none_detected":
-        _check("resources.no_throttle", True, "thermal=none_detected", checks)
-    elif th == "likely":
-        overall &= _check("resources.no_throttle", False, "thermal=likely — throttling evidence", checks)
-    else:
-        # unknown / slowdown_cause_unknown / missing: fail CLOSED to INCONCLUSIVE,
-        # never silently equivalent to "not throttling".
+    sus_temp = _classify_sustained_thermal(sus)
+    if th == "likely" or sus_temp == "likely":
         overall &= _check("resources.no_throttle", False,
-                          f"thermal={th} — no certifiable evidence (INCONCLUSIVE, not pass)", checks,
+                          f"throttling evidence (short={th}, sustained={sus_temp})", checks)
+    elif th == "none_detected" or sus_temp == "none_detected":
+        _check("resources.no_throttle", True,
+               f"no throttling (short={th}, sustained={sus_temp})", checks)
+    else:
+        # unknown / slowdown_cause_unknown / missing on BOTH paths: fail CLOSED.
+        overall &= _check("resources.no_throttle", False,
+                          f"thermal short={th}, sustained={sus_temp} — no certifiable "
+                          f"evidence (INCONCLUSIVE, not pass)", checks,
                           kind="missing")
     oom = any(("out of memory" in str(e).lower() or "oom" in str(e).lower())
               and "capacity_probe_oom" not in str(e).lower()
@@ -350,18 +353,92 @@ def _decisive_fail(checks):
     # never fails a machine — it yields INCONCLUSIVE.
     return any(not c["pass"] and c.get("kind", "measured") == "measured" for c in checks)
 
+def _classify_sustained_thermal(sus):
+    """Independent throttle verdict from the 10-minute workload's own telemetry:
+    hot + clock decline under load + performance degradation = likely;
+    full telemetry without those signs = none_detected; otherwise unknown."""
+    evo = ((sus.get("tests") or {}).get("resource_evolution") or {})
+    per = ((sus.get("tests") or {}).get("per_agent") or {})
+    temps = ((evo.get("gpu_temp_c") or {}) if isinstance(evo.get("gpu_temp_c"), dict) else {}).get("per_window") or []
+    clocks = ((evo.get("gpu_clock_mhz") or {}) if isinstance(evo.get("gpu_clock_mhz"), dict) else {}).get("per_window") or []
+    temps = [t for t in temps if t is not None]
+    clocks = [c for c in clocks if c is not None]
+    degr = max([(a.get("degradation_pct") or 0) for a in per.values() if isinstance(a, dict)] or [0])
+    if not temps:
+        return "unknown"
+    hot = max(temps) >= 83
+    drop = None
+    if len(clocks) >= 4:
+        early = sum(clocks[:2]) / 2
+        late = sum(clocks[-2:]) / 2
+        drop = (early - late) / early if early else 0
+    if hot and drop is not None and drop > 0.10 and degr > 10:
+        return "likely"
+    if drop is None:
+        # Temperature without clocks cannot certify anything: clock decline is
+        # the essential throttle signal. Fail closed.
+        return "unknown"
+    return "none_detected"
+
 def _has_headroom(results, gate):
+    """HEADROOM from the same sustained evidence that decides qualification —
+    never from a short probe. Requires: worst steady FPS margin, worst
+    miss/drop within headroom limits, VRAM peak below occupancy limit, and
+    sustained thermal verdict none_detected."""
     try:
-        t = (results.get("pipeline", {}).get("tests") or {}).get("end_to_end_ms", {})
-        fps = t.get("throughput_fps") or 0
+        sus = results.get("sustained", {})
+        if sus.get("status") not in S.GATE_ELIGIBLE:
+            return False
+        per = (sus.get("tests") or {}).get("per_agent", {})
+        req = gate.get("req_fps", 15)
         margin = gate.get("headroom", {}).get("min_fps_margin", 1.2)
-        miss = max(t.get("deadline_miss_pct", 0), t.get("drop_pct", 0))
-        return fps >= gate.get("req_fps", 15) * margin and miss <= gate.get("headroom", {}).get("max_miss_pct", 2.0)
+        worst_fps = min(a.get("steady_fps", 0) or 0 for a in per.values())
+        worst_miss = max(a.get("max_window_miss_pct", 100) if a.get("max_window_miss_pct") is not None else 100
+                         for a in per.values())
+        worst_drop = max(a.get("max_window_drop_pct", 100) if a.get("max_window_drop_pct") is not None else 100
+                         for a in per.values())
+        if worst_fps < req * margin:
+            return False
+        if worst_miss > gate.get("headroom", {}).get("max_miss_pct", 2.0):
+            return False
+        if worst_drop > gate.get("headroom", {}).get("max_miss_pct", 2.0):
+            return False
+        evo = (sus.get("tests") or {}).get("resource_evolution", {}) or {}
+        vram = evo.get("vram_pct") if isinstance(evo.get("vram_pct"), dict) else None
+        if vram and vram.get("max") is not None:
+            if vram["max"] > gate.get("headroom", {}).get("max_vram_occupied_pct", 85):
+                return False
+        if _classify_sustained_thermal(sus) != "none_detected":
+            return False
+        return True
     except Exception:
         return False
 
 _STATUS_RANK = {S.FAILED: 0, S.ABORTED: 1, S.INCONCLUSIVE: 2, S.UNSUPPORTED: 3,
                 S.NOT_RUN: 4, S.PARTIAL: 5, S.FALLBACK: 6, S.FULL: 7}
+
+_FPS_KEYS = ("fps", "ips", "throughput", "matched_rate", "success")
+_BAD_KEYS = ("p95", "p99", "miss", "drop", "max_", "degradation", "growth")
+
+def _walk_leaves(node, fps_vals, bad_vals):
+    """Recursively collect numerics so NESTED sustained metrics (per_agent ->
+    uav -> steady_fps) steer worst-run selection, not just top-level keys."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            _walk_leaves(v, fps_vals, bad_vals) if isinstance(v, (dict, list)) else _leaf(k, v, fps_vals, bad_vals)
+    elif isinstance(node, list):
+        for v in node:
+            if isinstance(v, (dict, list)):
+                _walk_leaves(v, fps_vals, bad_vals)
+
+def _leaf(key, value, fps_vals, bad_vals):
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return
+    kl = key.lower()
+    if any(k in kl for k in _FPS_KEYS):
+        fps_vals.append(value)
+    elif any(k in kl for k in _BAD_KEYS):
+        bad_vals.append(value)
 
 def aggregate_runs(results):
     """Fold module__runN repetitions into a conservative worst-case aggregate.
@@ -380,15 +457,14 @@ def aggregate_runs(results):
             groups[base].append((k, v))
     for base, runs in groups.items():
         runs = [v for _, v in sorted(runs)]
-        # Worst run = worst status first, then worst throughput (min fps).
+        # Worst run = worst status first, then worst throughput (min fps),
+        # then worst tail (max bad metric) — over ALL nested leaves.
         def _worst_key(v):
-            fps = 1e18
-            for m in (v.get("tests") or {}).values():
-                if isinstance(m, dict):
-                    for fk in ("throughput_fps", "steady_fps", "final_fps", "batch_ips"):
-                        if isinstance(m.get(fk), (int, float)):
-                            fps = min(fps, m[fk])
-            return (_STATUS_RANK.get(v.get("status", S.NOT_RUN), -1), fps)
+            fps_vals, bad_vals = [], []
+            _walk_leaves(v.get("tests") or {}, fps_vals, bad_vals)
+            fps = min(fps_vals) if fps_vals else float("inf")
+            bad = max(bad_vals) if bad_vals else float("-inf")
+            return (_STATUS_RANK.get(v.get("status", S.NOT_RUN), -1), fps, -bad)
         worst = min(runs, key=_worst_key)
         agg = {"module": base, "tests": {}, "errors": [],
                "status": min((v.get("status", S.NOT_RUN) for v in runs),

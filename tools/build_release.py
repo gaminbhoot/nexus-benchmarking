@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 INCLUDE_TOP = ["nexus_bench", "profiles", "assets", "release", "tools",
                "README_FIRST.txt", "README.md", "CHANGELOG.md", "LICENSE",
-               "pyproject.toml"]
+               "pyproject.toml", "requirements.lock"]
 INCLUDE_LAUNCHERS = ["NEXUS_Qualification.bat", "NEXUS_Qualification.sh",
                      "NEXUS_Qualification.command"]
 EXCLUDE_DIRS = {".venv", ".git", "__pycache__", "reports", "graphify-out",
@@ -36,10 +36,17 @@ def sha256_file(path):
 def build(root, outdir=None):
     from nexus_bench import assets as A
     from nexus_bench import release as R
+    # verify -> bootstrap missing official assets -> verify again -> tree.
+    # The builder never accepts an unverified package.
     ok, recs = A.verify_assets(root)
+    if not ok:
+        print("missing assets detected; bootstrapping official assets...")
+        A.bootstrap(root)
+        ok, recs = A.verify_assets(root)
     if not ok:
         bad = [r for r in recs if r["status"] != "OK"]
         raise SystemExit(f"refusing to build release with unverified assets: {bad}")
+    A.ensure_accuracy_tree(root)
     # fresh release identity for exactly this tree
     import tools.make_release as MR
     MR.main()
